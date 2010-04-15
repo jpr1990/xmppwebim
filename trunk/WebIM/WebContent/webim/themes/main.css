@@ -1,0 +1,39 @@
+@CHARSET "UTF-8";
+.xmppIMPanel{
+	font-family: "宋体";
+	font-size: 12px;
+	margin:0;
+	padding:0 !important;
+}
+
+#xmppIM_contactList{
+	padding:10px 0 0 0;
+	margin:0;
+}
+
+#xmppIM_contactList ul{
+	list-style-type:none;
+	margin:0;
+	padding:0;
+}
+
+#xmppIM_contactList li{
+	clear:both;
+	display:block;
+	line-height:18px;
+	margin:0;
+	min-height:18px;
+	padding:0 0 0 15px;
+}
+
+#xmppIM_contactList li a{
+	cursor:pointer;
+}
+
+#xmppIM_contactList li.user{
+	cursor:default;
+}
+
+#xmppIM_contactList li.user a{
+	cursor:default;
+}
