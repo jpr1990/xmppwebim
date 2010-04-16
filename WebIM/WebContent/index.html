@@ -4,15 +4,21 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>Web IM</title>
-<link href="webim/themes/sunny/jquery.ui.custom.css" rel="stylesheet" type="text/css"/>
+
+<link href="webim/themes/redmond/jquery.ui.custom.css" rel="stylesheet" type="text/css"/>
 <link href="webim/themes/main.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="webim/lib/jquery.js"></script>
 <script type="text/javascript" src="webim/lib/jquery.ui.custom.min.js"></script>
 <script type="text/javascript" src="webim/lib/strophe.js"></script>
 <script type="text/javascript" src="webim/xmppIM.js"></script>
+<style>
+	body,html{
+		font-size: 12px;
+	}
+</style>
 <script type="text/javascript">
 	$(function() {
-		$("#dialog").xmppIM({});
+		$("#dialog").xmppIM();
 	});
 </script>
 
