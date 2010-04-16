@@ -27,6 +27,8 @@
 			connection : {},
 			container : {},			
 			setting : $.extend( {}, $.fn.xmppIM.defaults),
+			chatRoomDlg : {},
+			chatRoomTab : {},
 			/**
 			 * 初始化
 			 */
@@ -103,8 +105,17 @@
 			initWorkspace : function(){
 				var _this = this;
 				this.container.load(this.setting.path + '/html/workspace.html', function(){
-					$('#xmppIM_contactPanel').tabs();
-					
+					$('#xmppIM_contactPanel').tabs({						
+					});
+					_this.chatRoomDlg = $('#xmppIM_chatDialog').dialog({
+						height : 420,
+						width : 500,
+						title : '聊天',
+						autoOpen: false
+					});
+					_this.chatRoomTab = $('#xmppIM_chatDialog').tabs({
+						tabTemplate: '<li><a href="#{href}">#{label}</a> <span class="ui-icon ui-icon-close">Remove Tab</span></li>'
+					});
 					//<iq type="get" id="sd4"><query xmlns="jabber:iq:roster"/></iq>
 					var queryRoster = $iq({type: 'get'}).c('query', {xmlns: $.fn.xmppIM.NS.IQ_ROSTER});
 					_this.connection.send(queryRoster.tree());
@@ -126,8 +137,8 @@
 			 * 		<item jid="lxp@viking" subscription="both"><group>我的好友</group></item>
 			 * </query></iq>
 			 */
-			handleRoster : function(iq){
-				console.log(iq);
+			handleRoster : function(iq){	
+				var component = $.fn.xmppIM.component;
 				var groupList = {};
 				var groupTemplate = $('#xmppIM_defaultContact_Group').clone();//先复制一个用作模板
 				$(iq).find('item').each(function(){
@@ -153,6 +164,14 @@
 				$('#xmppIM_contactList').find('a[type="xmppIM_contactGroup_Header"]').click(function(){
 					$(this).siblings('ul').toggle();
 				});
+				//设置用户双击事件
+				$('li.user').live('dblclick',function(){					
+					component.createOne2OneChat(this.id);
+				});
+			},
+			createOne2OneChat : function(jid){
+				//chatRoomTab.add
+				this.chatRoomDlg.dialog('open');
 			},
 			makeJID : function(userId){
 				return userId + "@" + this.setting.domain + "/" + this.setting.resource;
