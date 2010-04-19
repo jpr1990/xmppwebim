@@ -1,0 +1,5 @@
+{
+	presence:{jid:{type, status, priority, mode, language}},
+	groups:{goupsName:{jid:{entriy},jid:{entriy},...},
+	entries:{jid:{jid, nickName, type, status, groups:[name,name,...]}}
+}
