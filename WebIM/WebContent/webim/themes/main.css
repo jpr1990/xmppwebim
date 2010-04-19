@@ -1,7 +1,7 @@
 @CHARSET "UTF-8";
 
 .xmppIMPanel {
-	font-family: "宋体";
+	font-family: "Arial","Helvetica","Verdana","sans-serif","宋体";
 	font-size: 12px;
 	margin: 0;
 	padding: 0 !important;
@@ -27,16 +27,26 @@
 	padding: 0 0 0 15px;
 }
 
+#xmppIM_contactList li b {
+	float:left;
+	cursor: pointer;
+}
+
 #xmppIM_contactList li a {
+	float:left;
 	cursor: pointer;
 }
 
 #xmppIM_contactList li.user {
-	cursor: default;
+	cursor: pointer;
+}
+
+#xmppIM_contactList li.user b {
+	float:left;
 }
 
 #xmppIM_contactList li.user a {
-	cursor: default;
+	float:left;
 }
 
 /*聊天对话框*/
