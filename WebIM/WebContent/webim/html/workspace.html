@@ -24,12 +24,35 @@
 	</div>
 	<div id="xmppIM_toolBar"></div>
 </div>
-<div style="display:none;" id="xmppIM_chatDialog">
-	<ul>
-			<li><a href="#tabs-1">Nunc</a> <span class="ui-icon ui-icon-close">Remove Tab</span></li>
-		</ul>
-		<div id="tabs-1">
-			<p>Proin elit arcu, rutrum commodo, vehicula tempus, commodo a, risus. Curabitur nec arcu. Donec sollicitudin mi sit amet mauris. Nam elementum quam ullamcorper ante. Etiam aliquet massa et lorem. Mauris dapibus lacus auctor risus. Aenean tempor ullamcorper leo. Vivamus sed magna quis ligula eleifend adipiscing. Duis orci. Aliquam sodales tortor vitae ipsum. Aliquam nulla. Duis aliquam molestie erat. Ut et mauris vel pede varius sollicitudin. Sed ut dolor nec orci tincidunt interdum. Phasellus ipsum. Nunc tristique tempus lectus.</p>
+<div style="display:none;" class="xmppIM_chatDialog" id="xmppIM_chatDialog">
+	<div class="xmppIM_chatPanel">
+		<div class="header">
+			<img width="29" height="29" src="webim/themes/img.jpg" class="avatar"/>
+			<div class="chatRoomUserInfo">
+				<div class="userName"></div>
+				<div class="presence"></div>
+			</div>
 		</div>
+		<br style="clear:both"/>
+		<div class="chatLog">
+			<div class="logItem" type="template" style="display:none;">
+				<div type="logItemHeader"><span class="logUserName"></span><span class="logTime"></span></div>
+				<div class="content">
+				</div>
+			</div>
+		</div>
+		<div class="cmdBar"></div>
+	  <div class="inputArea">
+		<table width="100%" border="0" cellspacing="0" cellpadding="0">
+		  <tr>
+			<td><textarea name="" cols="5" rows="5" id="xmppIM_msgContent"></textarea></td>
+			<td width="75px">
+				<input type="button" value="发送" id="xmppIM_btnSendMsg"/>
+				<input type="hidden" id="xmppIM_targetJID"/>
+			</td>
+		  </tr>
+		</table>
+		</div>
+	</div>
 </div>
 

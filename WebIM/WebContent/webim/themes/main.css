@@ -1,127 +1,148 @@
 @CHARSET "UTF-8";
-.xmppIMPanel{
+
+.xmppIMPanel {
 	font-family: "宋体";
 	font-size: 12px;
+	margin: 0;
+	padding: 0 !important;
+}
+
+#xmppIM_contactList {
+	padding: 10px 0 0 0;
+	margin: 0;
+}
+
+#xmppIM_contactList ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+#xmppIM_contactList li {
+	clear: both;
+	display: block;
+	line-height: 18px;
+	margin: 0;
+	min-height: 18px;
+	padding: 0 0 0 15px;
+}
+
+#xmppIM_contactList li a {
+	cursor: pointer;
+}
+
+#xmppIM_contactList li.user {
+	cursor: default;
+}
+
+#xmppIM_contactList li.user a {
+	cursor: default;
+}
+
+/*聊天对话框*/
+.xmppIM_chatPanel {
+	font-size: 12px;
+}
+
+.xmppIM_chatPanel .header {
+	
+}
+
+.xmppIM_chatPanel .header .avatar {
+	float: left;
+}
+
+.xmppIM_chatPanel .header .chatRoomUserInfo {
+	margin-left: 5px;
+	color: #999900;
+	float: left;
+	width: 150px;
+}
+
+.xmppIM_chatPanel .header .userName {
+	font-size: 15px;
+	font-weight: bold;
+}
+
+.xmppIM_chatPanel .header .presence {
+	
+}
+
+.xmppIM_chatPanel .chatLog {
+	width: 98%;
+	height: 240px;
+	padding: 10px 0px 5px 5px;
+	border: 1px solid #CCE8F8;
+	border-width: 1px 3px 1px 3px;
+}
+
+.xmppIM_chatPanel .chatLog .logItem {
+	
+}
+
+/*接收到的消息*/
+.xmppIM_chatPanel .chatLog .itemHeaderFrom {
+	color: #0000FF;
+}
+
+/*发出去的消息*/
+.xmppIM_chatPanel .chatLog .itemHeaderTo {
+	color: #008040;
+}
+
+.xmppIM_chatPanel .chatLog .logUserName {
+	
+}
+
+.xmppIM_chatPanel .chatLog .logTime {
+	margin-left: 15px;
+}
+
+.xmppIM_chatPanel .chatLog .content {
+	margin-left: 20px;
+}
+
+/*聊天工具栏*/
+.xmppIM_chatPanel .cmdBar {
+	width: 98%;
+	height: 27px;
+	background-color: #B1D4EA;
+	border: 1px solid #CCE8F8;
+	border-width: 0px 3px 0px 3px;
+	padding: 2px 0px 2px 5px;
+}
+
+.xmppIM_chatPanel .inputArea {
+	width: 98%;
+	border: 1px solid #CCE8F8;
+	border-width: 1px 3px 1px 3px;
+	height: 50px;
+	padding: 0px 0px 5px 5px;
+}
+
+.xmppIM_chatPanel .inputArea textarea {
+	width: 100%;
+	height: 50px;
+	overflow: auto;
+	border: 0px;
+}
+
+.xmppIM_chatPanel .inputArea input {
+	width: 70px;
+	height: 50px;
+}
+
+
+
+/*聊天对话框*/
+.xmppIM_chatDialog {
 	margin:0;
 	padding:0 !important;
 }
 
-#xmppIM_contactList{
-	padding:10px 0 0 0;
-	margin:0;
+.xmppIM_chatDialog li .ui-icon-close {
+	float: left;
+	margin: 0.4em 0.2em 0 0;
+	cursor: pointer;
 }
 
-#xmppIM_contactList ul{
-	list-style-type:none;
-	margin:0;
-	padding:0;
-}
-
-#xmppIM_contactList li{
-	clear:both;
-	display:block;
-	line-height:18px;
-	margin:0;
-	min-height:18px;
-	padding:0 0 0 15px;
-}
-
-#xmppIM_contactList li a{
-	cursor:pointer;
-}
-
-#xmppIM_contactList li.user{
-	cursor:default;
-}
-
-#xmppIM_contactList li.user a{
-	cursor:default;
-}
-
-/*聊天对话框*/
-.xmppIM_chatPanel{
-	font-size:12px;
-}
-
-.xmppIM_chatPanel .header{
-}
-
-.xmppIM_chatPanel .header .avatar{
-	float:left;
-}
-
-.xmppIM_chatPanel .header .chatRoomUserInfo{
-	margin-left:5px;
-	color:#999900;
-	float:left;
-	width:150px;
-}
-
-.xmppIM_chatPanel .header .userName{
-	font-size:15px;
-	font-weight:bold;
-}
-
-.xmppIM_chatPanel .header .presence{
-}
-
-.xmppIM_chatPanel .chatLog{
-	width:99%;
-	height:240px;
-	padding:10px 5px 5px 5px;
-	border:1px solid #CCE8F8;
-	border-width:1px 3px 1px 3px;
-}
-
-.xmppIM_chatPanel .chatLog .logItem{
-}
-
-/*接收到的消息*/
-.xmppIM_chatPanel .chatLog .itemHeaderFrom{
-	color:#0000FF;
-}
-
-/*发出去的消息*/
-.xmppIM_chatPanel .chatLog .itemHeaderTo{
-	color:#008040;
-}
-
-.xmppIM_chatPanel .chatLog .logUserName{
-}
-
-.xmppIM_chatPanel .chatLog .logTime{
-	margin-left:15px;
-}
-
-.xmppIM_chatPanel .chatLog .content{
-	margin-left:20px;
-}
-
-.xmppIM_chatPanel .cmdBar{
-	width:99%;
-	height:27px;
-	background-color:#B1D4EA;
-	border:1px solid #CCE8F8;
-	border-width:0px 3px 0px 3px;
-	padding:2px 5px 2px 5px;
-}
-
-.xmppIM_chatPanel .inputArea{
-	width:99%;
-	border:1px solid #CCE8F8;
-	border-width:1px 3px 1px 3px;
-	height:50px;
-	padding:0px 5px 5px 5px;
-}
-
-.xmppIM_chatPanel .inputArea textarea{
-	width:100%;
-	height:50px;
-	overflow:auto;
-	border:0px;	
-}
-
-.xmppIM_chatPanel .inputArea input{
-	width:70px;
-	height:50px;
-}
