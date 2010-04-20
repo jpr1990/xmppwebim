@@ -93,6 +93,11 @@
 
 #xmppIM_contactList li.user a {
 	float:left;
+	font-weight:normal;
+}
+
+#xmppIM_contactList li.online a {
+	font-weight:bold;
 }
 
 /*聊天对话框*/

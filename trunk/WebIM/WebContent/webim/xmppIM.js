@@ -19,7 +19,7 @@
 				service : '/http-bind/',
 				path : 'webim',
 				resource: 'webim',
-				domain: 'gyoa',
+				domain: 'viking',
 				workspaceClass : 'xmppIMPanel',
 				dateFormat: 'hh:mm:ss',
 				title: 'WEB IM'
@@ -105,7 +105,7 @@
 		            return null;
 		        }
 		        var slashIndex = XMPPAddress.indexOf("/");
-		        if (slashIndex + 1 > XMPPAddress.length() || slashIndex < 0) {
+		        if (slashIndex + 1 > XMPPAddress.length || slashIndex < 0) {
 		            return "";
 		        }
 		        else {
@@ -121,7 +121,7 @@
 		        }
 		        var atIndex = XMPPAddress.lastIndexOf("@");
 		        // If the String ends with '@', return the empty string.
-		        if (atIndex + 1 > XMPPAddress.length()) {
+		        if (atIndex + 1 > XMPPAddress.length) {
 		            return "";
 		        }
 		        var slashIndex = XMPPAddress.indexOf("/");
@@ -170,7 +170,17 @@
 				   }
 			   }
 			   return format;  
+			},
+			/**
+			 * 地址里的特殊字符转义
+			 */
+			escapeAddress : function(XMPPAddress){
+				if (XMPPAddress == null) {
+		            return null;
+		        }
+				return XMPPAddress.replace(/@/, '\\@').replace(/\//g, '\\/');
 			}
+			
 	};
 	
 	function xmppIM_component() {
@@ -181,7 +191,7 @@
 			chatRoomDlgList : {},//保存全部聊天对话框
 			/**
 			 * {
-					presence:{jid:{type, status, priority, mode, language}},
+					presence:{jid:{resource:{type, status, priority, mode, language},...}},
 					groups:{goupsName:{jid:{entriy},jid:{entriy},...},
 					entries:{jid:{jid, nickName, type, status, groups:[name,name,...]}}
 				}
@@ -260,6 +270,7 @@
 				this.connection.addHandler(this.onMessage, null, 'message', 'chat', null, null);
 				this.connection.addHandler(this.onJabberRoster, $.xmppIM.NS.IQ_ROSTER, 'iq', null, null, null);
 				this.connection.addHandler(this.onDiscoverItems, $.xmppIM.NS.DISCOVER_ITEM, 'iq', null, null, null);
+				this.connection.addHandler(this.onPresence, null, 'presence', null, null, null);
 			},
 			/**
 			 * 登陆成功后初始化IM界面
@@ -300,6 +311,63 @@
 					item.name = $this.attr('name');
 					thisComponent.discoverItems.push(item);
 				});
+			},
+			/**
+			 * 处理presence
+			 */
+			onPresence : function(p){
+				var $p = $(p);
+				var presence = {type:'', status:'', priority:'', mode:'', language:''};
+				presence.type = $p.attr('type');
+				if(presence.type == undefined || presence.type==''){
+					presence.type = $.xmppIM.PresenceType.available;
+				}
+				var from = $p.attr('from');
+				var resource = $.xmppIM.util.parseResource(from);
+				var address = $.xmppIM.util.parseBareAddress(from);
+				resource == '' ? 'empty' : resource;
+				console.log(p, from, presence.type);
+				if(presence.type == $.xmppIM.PresenceType.available){//上线
+					//解析presence
+					var status = $p.children('status');
+					presence.status = status.length > 0 ? status.text() : '';
+					var priority = $p.children('priority');
+					presence.priority = priority.length > 0 ? priority.text() : '';
+					var mode = $p.children('show');
+					presence.mode = mode.length > 0 ? mode.text() : '';
+					var language = $p.attr('xml:lang');
+					presence.language = language ? language : '';
+					//按资源存放					
+					if(!thisComponent.roster.presence[address]){
+						thisComponent.roster.presence[address] = {};
+					}
+					thisComponent.roster.presence[address][resource] = presence;
+					if(!thisComponent.roster.presence[address].count){
+						thisComponent.roster.presence[address].count = 0;
+					}
+					thisComponent.roster.presence[address].count ++;
+					//更新联系人列表
+					var $oldItem = $('#'+$.xmppIM.util.escapeAddress(address));
+					var $newItem = $oldItem.clone(true).addClass('online').attr('id', from)
+									.attr('res', resource).prependTo($oldItem.parent());
+					if(thisComponent.roster.presence[address].count > 1){ //如果同一个user使用多个资源登陆
+						$newItem.children('a').text(function(index, text){
+							return text + ' - ' + resource;
+						});
+					}
+					$oldItem.hide();
+					console.log('上线',thisComponent.roster.presence[address].count);
+				}else if(presence.type == $.xmppIM.PresenceType.unavailable){//离线
+					delete thisComponent.roster.presence[address][resource];
+					--thisComponent.roster.presence[address].count;
+					console.log('#'+$.xmppIM.util.escapeAddress(from)+'[res="'+resource+'"]');
+					$('#'+$.xmppIM.util.escapeAddress(from)+'[res="'+resource+'"]').remove();
+					if(thisComponent.roster.presence[address].count == 0){
+						$('#'+$.xmppIM.util.escapeAddress(address)).show();
+					}
+					console.log('离线',thisComponent.roster.presence[address].count);
+				}
+				return true;
 			},
 			/**
 			 * 处理联系人列表
