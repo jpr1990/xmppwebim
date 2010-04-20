@@ -19,7 +19,7 @@
 				service : '/http-bind/',
 				path : 'webim',
 				resource: 'webim',
-				domain: 'viking',
+				domain: 'gyoa',
 				workspaceClass : 'xmppIMPanel',
 				dateFormat: 'hh:mm:ss',
 				title: 'WEB IM'
@@ -29,7 +29,10 @@
 			 */
 			NS:{
 				IQ_ROSTER : 'jabber:iq:roster',
-				VCARD_TEMP: 'vcard-temp'
+				VCARD_TEMP: 'vcard-temp',
+				SEARCH	:'jabber:iq:search',
+				DISCOVER_ITEM : 'http://jabber.org/protocol/disco#items',
+				DISCOVER_INFO : 'http://jabber.org/protocol/disco#info'
 			},
 			/**
 			 * 在线类型，对应Presence包的show节点
@@ -174,7 +177,6 @@
 		return {
 			connection : {},
 			container : {},
-			$mainDlg : {},
 			setting : $.extend( {}, $.xmppIM.defaults),
 			chatRoomDlgList : {},//保存全部聊天对话框
 			/**
@@ -187,6 +189,7 @@
 			roster : {presence:{}, groups:{}, entries:{}}, //保存用户的联系人列表，还包括分组列表和在线状态
 			hasInit: false,//是否已初始化
 			curUserJid:'',
+			discoverItems:[],
 			/**
 			 * 初始化
 			 */
@@ -208,18 +211,20 @@
 			 * 加载并显示登录界面
 			 */
 			showLoginDlg : function() {
-				this.container.load(this.setting.path + '/html/login.html');
+				this.container.load(this.setting.path + '/html/login.html', function(){
+					$('#xmppIM_btnLogin').button().click(function(){
+						thisComponent.curUserJid = thisComponent.makeJID($('#xmppIM_login_userId').val());
+						var password = $('#xmppIM_login_password').val();
+						thisComponent.connection.connect(thisComponent.curUserJid, password, thisComponent.onConnect);
+					});
+				});				
 				this.container.dialog( {
-					buttons : {
-						"登陆" : function() {
-							thisComponent.curUserJid = thisComponent.makeJID($('#xmppIM_login_userId').val());
-							var password = $('#xmppIM_login_password').val();
-							thisComponent.connection.connect(thisComponent.curUserJid, password, thisComponent.onConnect);
-						}
-					},
 					height : 500,
 					width : 260,
-					title : thisComponent.setting.title
+					title : thisComponent.setting.title,
+					open: function(event, ui){
+						//event.target.find('#xmppIM_btnLogin').
+					}
 				});
 			},
 			/**
@@ -237,15 +242,14 @@
 				} else if (status == Strophe.Status.CONNECTED) {
 					// 登陆成功
 					thisComponent.container.dialog('option', 'title', thisComponent.setting.title + ' - ' + thisComponent.curUserJid);
-					//处理函数、namespace 、包名、包的type属性、包id、包的from属性、options
+					//初始化
 					thisComponent.attachHandler.call(thisComponent);
-					thisComponent.initWorkspace.call(thisComponent);
-					
-					//发送在线的Presence
-					thisComponent.connection.send($pres().tree());
+					thisComponent.initWorkspace.call(thisComponent);					
 				}else if(status == Strophe.Status.AUTHFAIL){
+					thisComponent.connection.disconnect();
 				}else if(status == Strophe.Status.ATTACHED){
 				}else if(status == Strophe.Status.ERROR){
+					thisComponent.connection.disconnect();
 				}
 			},
 			/**
@@ -255,6 +259,7 @@
 				//this.connection
 				this.connection.addHandler(this.onMessage, null, 'message', 'chat', null, null);
 				this.connection.addHandler(this.onJabberRoster, $.xmppIM.NS.IQ_ROSTER, 'iq', null, null, null);
+				this.connection.addHandler(this.onDiscoverItems, $.xmppIM.NS.DISCOVER_ITEM, 'iq', null, null, null);
 			},
 			/**
 			 * 登陆成功后初始化IM界面
@@ -262,13 +267,17 @@
 			initWorkspace : function(){
 				this.container.load(this.setting.path + '/html/workspace.html', function(){
 					$('#xmppIM_contactPanel').tabs();
-					//<iq type="get" id="sd4"><query xmlns="jabber:iq:roster"/></iq>
+					//查询服务器提供的服务
+					var queryDiscoverItem = $iq({type: 'get', to: thisComponent.setting.domain}).c('query', {xmlns: $.xmppIM.NS.DISCOVER_ITEM});
+					thisComponent.connection.send(queryDiscoverItem.tree());
+					//获取联系人
 					var queryRoster = $iq({type: 'get'}).c('query', {xmlns: $.xmppIM.NS.IQ_ROSTER});
 					thisComponent.connection.send(queryRoster.tree());
 					//聊天对话框的发送按钮事件
 					$('#xmppIM_btnSendMsg').button().live('click', function(){
 						thisComponent.sendMessage($(this));
 					});
+					//输入框按回车事件
 					$('#xmppIM_msgContent').live('keypress', function(event){
 						if (event.keyCode == '13') {
 							var $btn = $(this).parents('div.inputArea').find('#xmppIM_btnSendMsg');
@@ -276,48 +285,21 @@
 							return false;
 						}
 					});
+					//发送在线的Presence
+					thisComponent.connection.send($pres().tree());
 				});
 			},
 			/**
-			 * 发送短消息
+			 * 解析服务器提供的服务
 			 */
-			sendMessage : function($sendBtn){
-				var $dlg = $sendBtn.parents('div.xmppIM_chatDialog');
-				var $text = $('#xmppIM_msgContent', $dlg);
-				var content = $text.val();
-				if(content != ''){
-					var targetJID = $sendBtn.siblings('#xmppIM_targetJID').val();
-					$text.val('');
-					var msg = $msg({type:'chat', from:thisComponent.curUserJid, to:targetJID})
-						.cnode(Strophe.xmlElement('body','',content));
-					var nickName = thisComponent.curUserJid;
-					thisComponent.connection.send(msg.tree());
-					thisComponent.insertChatLog($dlg, nickName, new Date(), content, 'itemHeaderTo');
-				}
-			},
-			/**
-			 * 处理收到的短消息
-			 */
-			onMessage : function(msg){
-				var $msg = $(msg);
-				var from = $msg.attr('from');
-				var content = $msg.children('body').length > 0 ? $msg.children('body').text() : '';
-				var $dlg = thisComponent.createOne2OneChat(from);
-				var $chatLog = $dlg.find('div[type="template"]').clone().removeAttr('type');
-				var nickName = thisComponent.getNickName(from);
-				thisComponent.insertChatLog($dlg, nickName, new Date(), content, 'itemHeaderFrom');
-				return true;
-			},
-			/**
-			 * 插入一条聊天记录到对话框里
-			 */
-			insertChatLog : function($dlg, nickName, date, content, className){
-				var $chatLog = $dlg.find('div[type="template"]').clone().removeAttr('type');
-				$chatLog.find('span.logUserName').text(nickName);
-				$chatLog.find('span.logTime').text($.xmppIM.util.dateFormat(new Date, thisComponent.setting.dateFormat));
-				$chatLog.find('div.content').text(content);
-				$chatLog.find('div[type="logItemHeader"]').addClass(className);
-				$chatLog.appendTo($dlg.find('div.chatLog')).show();
+			onDiscoverItems : function(iq){
+				$(iq).find('item').each(function(){
+					var $this = $(this);
+					var item = {jid:'', name:''};
+					item.jid = $this.attr('jid');
+					item.name = $this.attr('name');
+					thisComponent.discoverItems.push(item);
+				});
 			},
 			/**
 			 * 处理联系人列表
@@ -365,7 +347,7 @@
 			createRosterTree : function(entries){
 				var groupTemplate = $('#xmppIM_defaultContact_Group').clone();//先复制一个用作模板
 				//默认分组的名称
-				var defaultGroupName = groupTemplate.find('a[type="xmppIM_contactGroup_Header"]:eq(0)').text();
+				var defaultGroupName = groupTemplate.find('span[type="xmppIM_contactGroup_Header"]:eq(0)').text();
 				$.each(entries, function(i, item){
 					//创建group
 					if(item.groups.length > 0){
@@ -427,24 +409,68 @@
 				}
 			},
 			/**
-			 * 创建一对一的聊天对话
+			 * 创建一对一的聊天对话，
+			 * 返回新建的对话框(jQuery)对象
 			 */
 			createOne2OneChat : function(jid){
 				//生成聊天对话框
 				if(thisComponent.chatRoomDlgList[jid]){
 					thisComponent.chatRoomDlgList[jid].dialog('open').dialog( "moveToTop" );
 				}else{
+					var nickName = thisComponent.getNickName(jid);
 					var $chatRoomDlg = $('#xmppIM_chatDialog').clone(true).attr('id', 'xmppIM_chatDialog_'+jid).appendTo($('#xmppIM_chatDialog'));
 					$('#xmppIM_targetJID', $chatRoomDlg).val(jid);
+					$chatRoomDlg.find('div.userName').text(nickName);
 					thisComponent.chatRoomDlgList[jid] = $chatRoomDlg;
 					$chatRoomDlg.dialog({
 						height : 413,
 						width : 525,
-						title : '与 '+thisComponent.getNickName(jid)+' 聊天',
+						title : '与 '+nickName+' 聊天',
 						resizable: false
 					});
 				}
 				return thisComponent.chatRoomDlgList[jid];
+			},		
+			/**
+			 * 发送短消息
+			 */
+			sendMessage : function($sendBtn){
+				var $dlg = $sendBtn.parents('div.xmppIM_chatDialog');
+				var $text = $('#xmppIM_msgContent', $dlg);
+				var content = $text.val();
+				if(content != ''){
+					var targetJID = $sendBtn.siblings('#xmppIM_targetJID').val();
+					$text.val('');
+					var msg = $msg({type:'chat', from:thisComponent.curUserJid, to:targetJID})
+						.cnode(Strophe.xmlElement('body','',content));
+					var nickName = thisComponent.curUserJid;
+					thisComponent.connection.send(msg.tree());
+					thisComponent.insertChatLog($dlg, nickName, new Date(), content, 'itemHeaderTo');
+				}
+			},
+			/**
+			 * 处理收到的短消息
+			 */
+			onMessage : function(msg){
+				var $msg = $(msg);
+				var from = $msg.attr('from');
+				var content = $msg.children('body').length > 0 ? $msg.children('body').text() : '';
+				var $dlg = thisComponent.createOne2OneChat(from);
+				var $chatLog = $dlg.find('div[type="template"]').clone().removeAttr('type');
+				var nickName = thisComponent.getNickName(from);
+				thisComponent.insertChatLog($dlg, nickName, new Date(), content, 'itemHeaderFrom');
+				return true;
+			},
+			/**
+			 * 插入一条聊天记录到对话框里
+			 */
+			insertChatLog : function($dlg, nickName, date, content, className){
+				var $chatLog = $dlg.find('div[type="template"]').clone().removeAttr('type');
+				$chatLog.find('span.logUserName').text(nickName);
+				$chatLog.find('span.logTime').text($.xmppIM.util.dateFormat(new Date, thisComponent.setting.dateFormat));
+				$chatLog.find('div.content').text(content);
+				$chatLog.find('div[type="logItemHeader"]').addClass(className);
+				$chatLog.appendTo($dlg.find('div.chatLog')).show();
 			},
 			/**
 			 * 获取联系人信息

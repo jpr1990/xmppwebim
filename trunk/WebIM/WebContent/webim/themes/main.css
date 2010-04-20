@@ -7,6 +7,52 @@
 	padding: 0 !important;
 }
 
+#xmppIM_loginPanel{
+	padding-top:60px;
+	margin-left:auto;
+	margin-right:auto;
+	width:200px;
+}
+
+
+#xmppIM_loginPanel  .loginUserId{
+	margin-bottom:15px;
+	width:200px;
+}
+
+#xmppIM_loginPanel .loginPassword{
+	width:200px;
+}
+
+#xmppIM_loginPanel .loginButton{
+	margin-top:60px;
+	margin-left:35%;
+}
+
+#xmppIM_statusBar{
+	padding:5px 2px 6px 3px;
+}
+
+#xmppIM_statusBar .avatar{
+	float:left;
+	margin-bottom:6px;
+}
+
+#xmppIM_statusBar .userInfo{
+	float:left;
+	margin-left:10px;
+	margin-top:2px;
+	margin-bottom:6px;
+}
+
+#xmppIM_statusBar .userName{
+	font-size:13px;
+	font-weight:bold;	
+}
+
+#xmppIM_statusBar .presence{
+}
+
 #xmppIM_contactList {
 	padding: 10px 0 0 0;
 	margin: 0;
@@ -70,7 +116,7 @@
 }
 
 .xmppIM_chatPanel .header .userName {
-	font-size: 15px;
+	font-size: 12px;
 	font-weight: bold;
 }
 
@@ -79,15 +125,17 @@
 }
 
 .xmppIM_chatPanel .chatLog {
-	width: 98%;
+	width: 100%;
 	height: 240px;
-	padding: 10px 0px 5px 5px;
-	border: 1px solid #CCE8F8;
-	border-width: 1px 3px 1px 3px;
+	padding: 10px 0px 0px 0px;
+	border:0;
+	background-color:#ffffff;
+	overflow-y:auto;
 }
 
 .xmppIM_chatPanel .chatLog .logItem {
-	
+	margin-left:5px;
+	margin-top:2px;
 }
 
 /*接收到的消息*/
@@ -110,24 +158,23 @@
 
 .xmppIM_chatPanel .chatLog .content {
 	margin-left: 20px;
+	color: #000000;
 }
 
 /*聊天工具栏*/
 .xmppIM_chatPanel .cmdBar {
-	width: 98%;
+	width: 100%;
 	height: 27px;
-	background-color: #B1D4EA;
-	border: 1px solid #CCE8F8;
-	border-width: 0px 3px 0px 3px;
-	padding: 2px 0px 2px 5px;
+	background-color: #C2D5E2;
+	border:0;
+	padding:0;
 }
 
 .xmppIM_chatPanel .inputArea {
-	width: 98%;
-	border: 1px solid #CCE8F8;
-	border-width: 1px 3px 1px 3px;
-	height: 50px;
-	padding: 0px 0px 5px 5px;
+	width: 100%;
+	border:0;
+	height: 55px;
+	padding: 0;
 }
 
 .xmppIM_chatPanel .inputArea textarea {
