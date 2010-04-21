@@ -99,6 +99,11 @@
 #xmppIM_contactList li.online a {
 	font-weight:bold;
 }
+/*在线状态*/
+#xmppIM_contactList li.user span {
+	margin-left:15px;
+	color:#999999;
+}
 
 /*聊天对话框*/
 .xmppIM_chatPanel {
@@ -193,8 +198,6 @@
 	width: 70px;
 	height: 50px;
 }
-
-
 
 /*聊天对话框*/
 .xmppIM_chatDialog {

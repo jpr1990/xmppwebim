@@ -2,8 +2,8 @@
 	<div id="xmppIM_statusBar">
 		<img width="40" height="40" src="webim/themes/qq.jpg" class="avatar ui-corner-all ui-state-default"/>
 		<div class="userInfo">
-			<div class="userName">烈冰</div>
-			<div class="presence">空闲</div>
+			<span class="presence" id="xmppIM_updatePresence">空闲</span>
+			<span class="userName">烈冰</span>			
 		</div>
 	</div>
 	<br style="clear:both"/>
@@ -57,5 +57,13 @@
 		</table>
 		</div>
 	</div>
+</div>
+<div style="display:none;"  id="xmppIM_presenceMenu">
+	<ul>
+		<li id="available">空闲</li>
+		<li id="chat">M我吧</li>
+		<li id="away">离开</li>
+		<li id="dnd">请勿打扰</li>
+	</ul>
 </div>
 
