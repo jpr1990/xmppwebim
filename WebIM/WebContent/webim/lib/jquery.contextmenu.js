@@ -65,7 +65,6 @@
                  .appendTo('body')
                  .hide();
     }
-    alert(options.triggerEvent);
     hash = hash || [];
     hash.push({
       id : id,
@@ -82,7 +81,6 @@
     });
 		
     var index = hash.length - 1;
-    alert(hash[index].triggerEvent+","+this.attr('id'));
     $(this).bind(hash[index].triggerEvent, function(e) {
       // Check if onContextMenu() defined
       var bShowContext = (!!hash[index].onContextMenu) ? hash[index].onContextMenu(e) : true;
@@ -118,8 +116,10 @@
         func(trigger, currentTarget);
       });
     });
-
-    menu.css({'left':e[cur.eventPosX],'top':e[cur.eventPosY]}).show();
+    var left, top;
+    left = $.isFunction(cur.eventPosX) ? cur.eventPosX() : cur.eventPosX;
+    top = $.isFunction(cur.eventPosY) ? cur.eventPosY() : cur.eventPosY;
+    menu.css({'left':left,'top':top}).show();
     if (cur.shadow) shadow.css({width:menu.width(),height:menu.height(),left:e.pageX+2,top:e.pageY+2}).show();
     $(document).one('click', hide);
   }

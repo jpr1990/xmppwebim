@@ -51,6 +51,12 @@
 }
 
 #xmppIM_statusBar .presence{
+	cursor:pointer;
+	margin-left:10px;
+}
+
+#xmppIM_searchBar .searchInput{
+	width:98%;
 }
 
 #xmppIM_contactList {

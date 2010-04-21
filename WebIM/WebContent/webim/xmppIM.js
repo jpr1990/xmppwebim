@@ -19,7 +19,7 @@
 				service : '/http-bind/',
 				path : 'webim',
 				resource: 'webim',
-				domain: 'gyoa',
+				domain: 'viking',
 				workspaceClass : 'xmppIMPanel',
 				dateFormat: 'hh:mm:ss',
 				title: 'WEB IM',
@@ -29,7 +29,7 @@
 			        available:'空闲', //在线(默认状态)
 			        away:'离开',//离开
 			        xa:'离开',//长时间离开
-			        dnd:'请勿打扰'//请勿打扰
+			        dnd:'忙碌中'//请勿打扰
 				}
 			},
 			/**
@@ -109,6 +109,13 @@
 		            return null;
 		        }
 				return XMPPAddress.replace(/@/, '\\@').replace(/\//g, '\\/');
+			},
+			/**
+			 * 把字符串转换成整数，如果转换失败则返回0
+			 */
+			parseInt : function(str){
+				var n = parseInt(str);
+				return isNaN(n) ? 0 : n;
 			}
 			
 	};
@@ -166,7 +173,7 @@
 						thisComponent.connection.connect(thisComponent.curUserJid, password, thisComponent.onConnect);
 					});
 				});				
-				this.container.dialog( {
+				this.container.dialog({
 					height : 500,
 					width : 260,
 					title : thisComponent.setting.title,
@@ -241,8 +248,9 @@
 						}
 					});
 					thisComponent.initUpdatePresenceMenu();
+					thisComponent.initSearchBar();
 					//发送在线的Presence
-					thisComponent.connection.send($pres().cnode(Strophe.xmlElement('status','',thisComponent.setting.presence[$.xmppIM.PresenceMode.available])).tree());
+					thisComponent.updatePresence($.xmppIM.PresenceMode.available, '8');
 				});
 			},
 			/**
@@ -252,19 +260,93 @@
 				$('#xmppIM_updatePresence').contextMenu('xmppIM_presenceMenu', {
 					bindings : {
 						'available' : function(t) {
-							alert('Trigger was ' + t.id + '\nAction was Open');
+							thisComponent.updatePresence($.xmppIM.PresenceMode.available, '8');
 						},
 						'chat' : function(t) {
-							alert('Trigger was ' + t.id + '\nAction was Email');
+							thisComponent.updatePresence($.xmppIM.PresenceMode.chat, '10');
 						},
 						'away' : function(t) {
-							alert('Trigger was ' + t.id + '\nAction was Save');
+							thisComponent.updatePresence($.xmppIM.PresenceMode.away, '4');
 						},
 						'dnd' : function(t) {
-							alert('Trigger was ' + t.id + '\nAction was Delete');
+							thisComponent.updatePresence($.xmppIM.PresenceMode.dnd, '6');
 						}
 					},
-					triggerEvent : 'click'
+					triggerEvent : 'click',
+					eventPosX:function(){
+						return $('#xmppIM_updatePresence').offset().left;
+					},
+					eventPosY:function(){
+						return $('#xmppIM_updatePresence').offset().top + 20;
+					}
+				});
+			},
+			/**
+			 * 辅助函数，在initUpdatePresenceMenu里调用
+			 */
+			updatePresence : function(mode, priority){
+				var status = thisComponent.setting.presence[mode];
+				if(mode == $.xmppIM.PresenceMode.available){
+					thisComponent.connection.send($pres()
+							.cnode(Strophe.xmlElement('status','',thisComponent.setting.presence[mode])).up()
+							.cnode(Strophe.xmlElement('priority','',priority))
+							.tree());
+				}else{
+					thisComponent.connection.send($pres()
+							.cnode(Strophe.xmlElement('show','',$.xmppIM.PresenceMode[mode])).up()
+							.cnode(Strophe.xmlElement('priority','',priority)).up()
+							.cnode(Strophe.xmlElement('status','',thisComponent.setting.presence[mode]))
+							.tree());
+				}
+				$('#xmppIM_updatePresence > span:eq(0)').text(status);
+			},
+			/**
+			 * 初始化搜索栏
+			 */
+			initSearchBar : function(){
+				$('#xmppIM_searchInput').autocomplete({
+					source: function(request, response) {
+						var maxResult = 6;
+						console.log(request, response, $.ui.autocomplete.escapeRegex(request.term));
+						var result = [];//[{label,value}]
+						var matcher = new RegExp('^'+$.ui.autocomplete.escapeRegex(request.term), "i");
+						$.each(thisComponent.roster.entries,function(jid, entry){
+							if(matcher.test(entry.nickName)){
+								result.push({'label':entry.nickName+'('+jid+')','value':entry.nickName,'jid':jid});
+							}
+							if(result.size >= maxResult){
+								return false;
+							}
+						});
+						if(result.length < maxResult){
+							$.each(thisComponent.roster.entries,function(jid, entry){
+								if(matcher.test(jid)){
+									result.push({'label':entry.nickName+'('+jid+')','value':entry.nickName,'jid':jid});
+								}
+								if(result.size >= maxResult){
+									return false;
+								}
+							});
+						}
+						response(result);
+					},					
+					select: function(event, ui) {
+						console.log(ui.item.value, ui.item.label, ui.item.jid);
+						var presence = thisComponent.roster.presence[ui.item.jid];
+						if(presence && presence.count > 0){
+							var target, priority = '';
+							$.each(presence, function(res, p){
+								if($.xmppIM.util.parseInt(p.priority) >= $.xmppIM.util.parseInt(priority)){
+									target = res;
+									priority = p.priority;
+								}
+							});
+							console.log('聊天：',ui.item.jid+'/'+target);
+							thisComponent.createOne2OneChat(ui.item.jid+'/'+target);
+						}else{
+							thisComponent.createOne2OneChat(ui.item.jid);
+						}
+					}
 				});
 			},
 			/**
