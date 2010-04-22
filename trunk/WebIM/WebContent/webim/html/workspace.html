@@ -1,17 +1,23 @@
 <div id="xmppIM_workspace">
-	<div id="xmppIM_statusBar">
-		<img width="40" height="40" src="webim/themes/qq.jpg" class="avatar ui-corner-all ui-state-default"/>
+	<div id="xmppIM_statusBar">		
 		<div class="userInfo">
 			<span class="userName" style="float:left;">烈冰</span>
 			<span class="presence" id="xmppIM_updatePresence" style="float:left;">
 				<span style="float:left;">空闲</span>
 				<span style="float:left;" class="ui-icon ui-icon-triangle-1-s"></span>
-			</span>			
+			</span>
 		</div>
-	</div>
-	<br style="clear:both"/>
+	</div>	
+	<br style="clear:both"/>	
 	<div id="xmppIM_searchBar">
-		<input id="xmppIM_searchInput" type="text" class="searchInput"/>
+		<div class="searchBg">
+			<input id="xmppIM_searchInput" type="text" class="searchInput"/>
+		</div>
+		<div class="toolBar">
+			<span class="ui-icon ui-icon-person"></span>
+			<span class="ui-icon ui-icon-wrench"></span>
+		</div>
+		<br style="clear:both"/>
 	</div>
 	<div id="xmppIM_contactPanel">
 		<ul>
@@ -34,14 +40,6 @@
 </div>
 <div style="display:none;" class="xmppIM_chatDialog" id="xmppIM_chatDialog">
 	<div class="xmppIM_chatPanel">
-		<div class="header">
-			<img width="29" height="29" src="webim/themes/img.jpg" class="avatar"/>
-			<div class="chatRoomUserInfo">
-				<div class="userName"></div>
-				<div class="presence">空闲</div>
-			</div>
-		</div>
-		<br style="clear:both"/>
 		<div class="chatLog">
 			<div class="logItem" type="template" style="display:none;">
 				<div type="logItemHeader"><span class="logUserName"></span><span class="logTime"></span></div>

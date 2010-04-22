@@ -19,7 +19,7 @@
 				service : '/http-bind/',
 				path : 'webim',
 				resource: 'webim',
-				domain: 'viking',
+				domain: 'gyoa',
 				workspaceClass : 'xmppIMPanel',
 				dateFormat: 'hh:mm:ss',
 				title: 'WEB IM',
@@ -241,7 +241,7 @@
 					});
 					//输入框按回车事件
 					$('#xmppIM_msgContent').live('keypress', function(event){
-						if (event.keyCode == '13') {
+						if (event.ctrlKey && event.keyCode == '13') {
 							var $btn = $(this).parents('div.inputArea').find('#xmppIM_btnSendMsg');
 							thisComponent.sendMessage($btn);
 							return false;
@@ -571,8 +571,8 @@
 					$chatRoomDlg.find('div.userName').text(nickName);
 					thisComponent.chatRoomDlgList[jid] = $chatRoomDlg;
 					$chatRoomDlg.dialog({
-						height : 413,
-						width : 525,
+						height : 340,
+						width : 420,
 						title : '与 '+nickName+' 聊天',
 						resizable: false
 					});
