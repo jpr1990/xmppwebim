@@ -47,7 +47,7 @@
 
 #xmppIM_statusBar .userName{
 	font-size:13px;
-	font-weight:bold;	
+	font-weight:bold;
 }
 
 #xmppIM_statusBar .presence{
@@ -55,8 +55,24 @@
 	margin-left:10px;
 }
 
+#xmppIM_searchBar{
+	
+}
+
+#xmppIM_searchBar .searchBg{
+	background:url("images/im.png") no-repeat scroll 100% -170px;
+	border:1px solid #DFE7ED;
+	width:200px;
+	float:left;
+}
+
 #xmppIM_searchBar .searchInput{
-	width:98%;
+	border:0;
+	width:170px;
+}
+
+#xmppIM_searchBar .toolBar{
+	float:right;
 }
 
 #xmppIM_contactList {
@@ -142,7 +158,7 @@
 
 .xmppIM_chatPanel .chatLog {
 	width: 100%;
-	height: 240px;
+	height: 190px;
 	padding: 10px 0px 0px 0px;
 	border:0;
 	background-color:#ffffff;
@@ -195,9 +211,10 @@
 
 .xmppIM_chatPanel .inputArea textarea {
 	width: 100%;
-	height: 50px;
+	height: 70px;
 	overflow: auto;
 	border: 0px;
+	padding:0px;
 }
 
 .xmppIM_chatPanel .inputArea input {
