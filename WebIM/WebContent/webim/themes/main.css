@@ -55,24 +55,29 @@
 	margin-left:10px;
 }
 
-#xmppIM_searchBar{
+.xmppIM_toolBar{
 	
 }
 
-#xmppIM_searchBar .searchBg{
+.xmppIM_toolBar .searchBg{
 	background:url("images/im.png") no-repeat scroll 100% -170px;
 	border:1px solid #DFE7ED;
 	width:200px;
 	float:left;
 }
 
-#xmppIM_searchBar .searchInput{
+.xmppIM_toolBar .searchInput{
 	border:0;
 	width:170px;
 }
 
-#xmppIM_searchBar .toolBar{
+.xmppIM_toolBar .toolBar{
 	float:right;
+}
+
+.xmppIM_toolBar .toolBar div{
+	float:right;
+	margin-left:6px;
 }
 
 #xmppIM_contactList {
