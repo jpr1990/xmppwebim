@@ -9,13 +9,17 @@
 		</div>
 	</div>	
 	<br style="clear:both"/>	
-	<div id="xmppIM_searchBar">
+	<div class="xmppIM_toolBar">
 		<div class="searchBg">
 			<input id="xmppIM_searchInput" type="text" class="searchInput"/>
 		</div>
-		<div class="toolBar">
-			<span class="ui-icon ui-icon-person"></span>
-			<span class="ui-icon ui-icon-wrench"></span>
+		<div class="toolBar" id="xmppIM_cmdButton">
+			<div>
+				<span class="ui-icon ui-icon-wrench" id="xmppIM_setting"></span>
+			</div>
+			<div>
+				<span class="ui-icon ui-icon-person" id="xmppIM_addContact"></span>
+			</div>
 		</div>
 		<br style="clear:both"/>
 	</div>
@@ -68,5 +72,34 @@
 		<li id="away">离开</li>
 		<li id="dnd">忙碌中</li>
 	</ul>
+</div>
+<div id="xmppIM_addContact_Dialog">
+  <p>查找方式</p>
+  <p>
+    <label>
+    <input name="xmppIM_searchJID" type="radio" id="xmppIM_rad_searchJID" title="精确查找" value="1" checked>
+    精确查找 </label>
+    <br/>
+    <label>
+    <input name="xmppIM_searchJID" type="radio" id="xmppIM_rad_searchDetail" title="按条件查找" value="2">
+    按条件查找 </label>
+  </p>
+  <p>帐号：
+    <label>
+    <input type="text" name="textfield">
+    </label>
+  </p>
+  <div id="xmppIM_searchDetail">
+    <p>查找关键字：
+      <label>
+      <input type="text" name="textfield2">
+      </label>
+    </p>
+    <p>
+      <label>
+      <input type="checkbox" name="checkbox" value="checkbox">
+      帐号 </label>
+    </p>
+  </div>
 </div>
 

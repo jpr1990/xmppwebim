@@ -11,6 +11,7 @@
 			}
 		});
 	};
+	
 	$.xmppIM = {
 			/**
 			 * 默认配置
@@ -19,7 +20,7 @@
 				service : '/http-bind/',
 				path : 'webim',
 				resource: 'webim',
-				domain: 'gyoa',
+				domain: 'viking',
 				workspaceClass : 'xmppIMPanel',
 				dateFormat: 'hh:mm:ss',
 				title: 'WEB IM',
@@ -72,6 +73,10 @@
 				unsubscribe:'unsubscribe'//请求取消订阅
 			}
 	};	
+	
+	$.xmppIM.component = function(){
+		return thisComponent;
+	};
 	
 	/**
 	 * 一些工具函数
@@ -249,6 +254,7 @@
 					});
 					thisComponent.initUpdatePresenceMenu();
 					thisComponent.initSearchBar();
+					thisComponent.initToolbar();
 					//发送在线的Presence
 					thisComponent.updatePresence($.xmppIM.PresenceMode.available, '8');
 				});
@@ -331,7 +337,6 @@
 						response(result);
 					},					
 					select: function(event, ui) {
-						console.log(ui.item.value, ui.item.label, ui.item.jid);
 						var presence = thisComponent.roster.presence[ui.item.jid];
 						if(presence && presence.count > 0){
 							var target, priority = '';
@@ -347,6 +352,32 @@
 							thisComponent.createOne2OneChat(ui.item.jid);
 						}
 					}
+				});
+			},
+			/**
+			 * 初始化工具栏
+			 */
+			initToolbar : function(){
+				$('#xmppIM_cmdButton  span').mouseover(function(){
+					$(this).parent().addClass('ui-state-hover');
+				}).mouseout(function(){
+					$(this).parent().removeClass('ui-state-hover');
+				});
+				$('#xmppIM_addContact').click(function(){
+					$('#xmppIM_addContact_Dialog').dialog({
+						height : 300,
+						width : 400,
+						title : '查找联系人',
+						open: function(event, ui){
+							$('#xmppIM_searchDetail').hide();
+						},
+						buttons:{
+							"取消":function(){
+							},
+							"查找":function(){
+							}
+						}
+					});
 				});
 			},
 			/**
@@ -639,7 +670,24 @@
 			},
 			makeJID : function(userId){
 				return userId + "@" + this.setting.domain + "/" + this.setting.resource;
-			}			 
+			},
+			/**
+			 * 检查指定的jid是否已经注册
+			 * <iq type='get'
+				    from='lxp@viking'
+				    to='small@viking'
+				    id='info2'>
+				  <query xmlns='http://jabber.org/protocol/disco#info'/>
+				</iq>
+			 */
+			checkUserRegister : function(jid){
+				var queryIQ = $iq({type: 'get', from:thisComponent.curUserJid, to: jid}).c('query', {xmlns: Strophe.NS.DISCO_INFO});
+				thisComponent.connection.sendIQ(queryIQ.tree(), function(iq){
+					console.log('已注册');
+				}, function(iq){
+					console.log('没注册');
+				});
+			}
 		};
 	};
 	
