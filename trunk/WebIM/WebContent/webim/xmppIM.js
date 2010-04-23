@@ -20,7 +20,7 @@
 				service : '/http-bind/',
 				path : 'webim',
 				resource: 'webim',
-				domain: 'viking',
+				domain: 'gyoa',
 				workspaceClass : 'xmppIMPanel',
 				dateFormat: 'hh:mm:ss',
 				title: 'WEB IM',
@@ -121,6 +121,12 @@
 			parseInt : function(str){
 				var n = parseInt(str);
 				return isNaN(n) ? 0 : n;
+			},
+			/**
+			 * 检查是否合法的jid
+			 */
+			isValidJID : function(jid){
+				return /^\w+@\S+$/.test(jid);
 			}
 			
 	};
@@ -363,6 +369,15 @@
 				}).mouseout(function(){
 					$(this).parent().removeClass('ui-state-hover');
 				});
+				$('#xmppIM_addContact_Dialog').find('[name="xmppIM_searchJID"]:radio').click(function(){
+					if($(this).val() == 1){
+						$('#xmppIM_searchJID').show();
+						$('#xmppIM_searchDetail').hide();
+					}else{
+						$('#xmppIM_searchJID').hide();
+						$('#xmppIM_searchDetail').show();
+					}
+				});
 				$('#xmppIM_addContact').click(function(){
 					$('#xmppIM_addContact_Dialog').dialog({
 						height : 300,
@@ -371,14 +386,46 @@
 						open: function(event, ui){
 							$('#xmppIM_searchDetail').hide();
 						},
+						close: function(event, ui) {
+							$('#xmppIM_rad_searchJID').click();
+						},
 						buttons:{
 							"取消":function(){
+								$('#xmppIM_addContact_Dialog').dialog('close');
 							},
 							"查找":function(){
+								var type = $('[name="xmppIM_searchJID"][checked]:radio').val();
+								if(type == 1){
+									searchForJID();
+								}else{
+									searchForDetail();
+								}
 							}
 						}
 					});
 				});
+			},
+			/**
+			 * 精确查找
+			 */
+			searchForJID : function(){
+				var jid = $('#xmppIM_txtSearchJID').val();
+				if($.xmppIM.util.isValidJID(jid)){
+					$('#xmppIM_searchJID_error').hide();
+					var queryIQ = $iq({type: 'get', from:thisComponent.curUserJid, to: jid}).c('query', {xmlns: Strophe.NS.DISCO_INFO});
+					thisComponent.connection.sendIQ(queryIQ.tree(), function(iq){
+						console.log('已注册');
+					}, function(iq){
+						console.log('没注册');
+					});
+				}else{
+					$('#xmppIM_searchJID_error').text('不是合法的帐号！').show();
+				}
+			},
+			/**
+			 * 按条件查找
+			 */
+			searchForDetail : function(){
 			},
 			/**
 			 * 解析服务器提供的服务
