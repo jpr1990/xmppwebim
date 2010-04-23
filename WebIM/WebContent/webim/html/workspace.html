@@ -73,9 +73,9 @@
 		<li id="dnd">忙碌中</li>
 	</ul>
 </div>
-<div id="xmppIM_addContact_Dialog">
-  <p>查找方式</p>
-  <p>
+<div id="xmppIM_addContact_Dialog" style="display:none;">
+  <div>查找方式</div>
+  <div>
     <label>
     <input name="xmppIM_searchJID" type="radio" id="xmppIM_rad_searchJID" title="精确查找" value="1" checked>
     精确查找 </label>
@@ -83,23 +83,28 @@
     <label>
     <input name="xmppIM_searchJID" type="radio" id="xmppIM_rad_searchDetail" title="按条件查找" value="2">
     按条件查找 </label>
-  </p>
-  <p>帐号：
+  </div>
+  <div id="xmppIM_searchJID">
+ 	 帐号：
     <label>
-    <input type="text" name="textfield">
+    <input type="text" id="xmppIM_txtSearchJID">
     </label>
-  </p>
+    <span style="display:none;" class="ui-state-error ui-corner-all">
+    	<span style="float: left; margin-right: 0.3em;" class="ui-icon ui-icon-alert"></span>
+    	<span id="xmppIM_searchJID_error"></span>
+    </span>
+  </div>
   <div id="xmppIM_searchDetail">
-    <p>查找关键字：
+    <div>查找关键字：
       <label>
-      <input type="text" name="textfield2">
+      <input type="text" name="xmppIM_txtSearchKey">
       </label>
-    </p>
-    <p>
+    </div>
+    <div>
       <label>
       <input type="checkbox" name="checkbox" value="checkbox">
       帐号 </label>
-    </p>
+    </div>
   </div>
 </div>
 
