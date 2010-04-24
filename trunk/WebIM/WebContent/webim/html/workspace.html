@@ -42,6 +42,7 @@
 	</div>
 	<div id="xmppIM_toolBar"></div>
 </div>
+
 <div style="display:none;" class="xmppIM_chatDialog" id="xmppIM_chatDialog">
 	<div class="xmppIM_chatPanel">
 		<div class="chatLog">
@@ -65,6 +66,7 @@
 		</div>
 	</div>
 </div>
+
 <div style="display:none;"  id="xmppIM_presenceMenu">
 	<ul>
 		<li id="available">空闲</li>
@@ -73,38 +75,69 @@
 		<li id="dnd">忙碌中</li>
 	</ul>
 </div>
+
 <div id="xmppIM_addContact_Dialog" style="display:none;">
-  <div>查找方式</div>
-  <div>
-    <label>
-    <input name="xmppIM_searchJID" type="radio" id="xmppIM_rad_searchJID" title="精确查找" value="1" checked>
-    精确查找 </label>
-    <br/>
-    <label>
-    <input name="xmppIM_searchJID" type="radio" id="xmppIM_rad_searchDetail" title="按条件查找" value="2">
-    按条件查找 </label>
-  </div>
-  <div id="xmppIM_searchJID">
- 	 帐号：
-    <label>
-    <input type="text" id="xmppIM_txtSearchJID">
-    </label>
-    <span style="display:none;" class="ui-state-error ui-corner-all">
-    	<span style="float: left; margin-right: 0.3em;" class="ui-icon ui-icon-alert"></span>
-    	<span id="xmppIM_searchJID_error"></span>
-    </span>
-  </div>
-  <div id="xmppIM_searchDetail">
-    <div>查找关键字：
-      <label>
-      <input type="text" name="xmppIM_txtSearchKey">
-      </label>
-    </div>
-    <div>
-      <label>
-      <input type="checkbox" name="checkbox" value="checkbox">
-      帐号 </label>
-    </div>
-  </div>
+	<div id="xmppIM_searchPanel">
+	  <div>您希望用何种方式添加联系人？</div>
+	  <div>
+	    <label>
+		    <input name="xmppIM_searchJID" type="radio" id="xmppIM_rad_searchJID" title="精确查找" value="1" checked>
+		   	 我已知道该联系人的帐号 
+	    </label>
+		
+	    <br/>
+	    <label>
+	    	<input name="xmppIM_searchJID" type="radio" id="xmppIM_rad_searchDetail" title="按条件查找" value="2">
+	   		 按条件查找 
+	    </label>
+	  </div>	  
+	  <div id="xmppIM_searchJID">
+		 	 帐号：
+		    <input type="text" id="xmppIM_txtSearchJID">
+		    <span id="xmppIM_searchJID_error" style="display:none;" class="ui-state-error ui-corner-all">		    	
+		    </span>
+	    </div>
+	  <div id="xmppIM_searchDetail">
+	    <div>查找关键字：
+	      	<input type="text" name="xmppIM_txtSearchKey">
+	    </div>
+	    <div>
+	      <label>
+	      	<input type="checkbox" name="checkbox" value="checkbox">帐号
+	      </label>
+	    </div>
+	  </div>
+  </div>  
+	<div id="xmppIM_searchJID_result" style="display:none;">
+	  	<div id="xmppIM_searchJID_resultInfo"></div>
+	  	<div id="xmppIM_searchJID_addContact" style="display:none;">
+	  		<div id="xmppIM_searchJID_resultJID" style="padding-left:3em;"></div>
+	  		<div>昵称：<input type="text" maxlength="10" id="xmppIM_searchJID_resultNickname"></input></div>
+	  		<div>分组：<select id="xmppIM_searchJID_resultGroup"></select></div>
+	  		<div></div>
+	  	</div>
+	</div>
+	<div id="xmppIM_searchDetail_result"></div>
 </div>
 
+<div style="display:none;" class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix" id="xmppIM_searchButton">
+	<button id="xmppIM_searchButton_Cancel" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+		<span class="ui-button-text">取消</span>
+	</button>
+	<button id="xmppIM_searchButton_Continue" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+		<span class="ui-button-text">继续加好友</span>
+	</button>
+	<button id="xmppIM_searchButton_Search" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+		<span class="ui-button-text">查找</span>
+	</button>
+	<button id="xmppIM_searchButton_add" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+		<span class="ui-button-text">添加好友</span>
+	</button>
+	<button id="xmppIM_searchButton_preScreen" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+		<span class="ui-button-text">上一步</span>
+	</button>
+</div>
+
+<div style="display:none;" id="xmppIM_confirmSubscribe"></div>
+
+<div style="display:none;" id="xmppIM_sysInfo"></div>
