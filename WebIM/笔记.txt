@@ -126,3 +126,14 @@
 		</x>
 	</query>
 </iq>
+
+=========================================================================================================
+添加好友，要连续发两个数据包
+<iq id="BDsk3-33" type="set">
+	<query xmlns="jabber:iq:roster">
+		<item jid="jjjjj@gyoa" name="jjjjj">
+			<group>我的好友</group>
+		</item>
+	</query>
+</iq>
+<presence id="BDsk3-34" to="jjjjj@gyoa" type="subscribe"></presence>
