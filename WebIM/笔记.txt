@@ -3,3 +3,126 @@
 	groups:{goupsName:{jid:{entriy},jid:{entriy},...},
 	entries:{jid:{jid, nickName, type, status, groups:[name,name,...]}}
 }
+
+获取admin的vcard
+<iq from='lxp@gyoa'
+    to='admin@gyoa'
+    type='get'
+    id='vc2'>
+  <vCard xmlns='vcard-temp'/>
+</iq>
+返回
+<iq xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" type="result" id="sd18" from="search.gyoa" to="lxp@gyoa/潘迪安">
+	<query xmlns="jabber:iq:search">
+		<x xmlns="jabber:x:data" type="result">
+			<reported>
+				<field label="JID" var="jid"/>
+				<field label="Username" var="Username"/>
+				<field label="Name" var="Name"/>
+				<field label="Email" var="Email"/>
+			</reported>
+			<item>
+				<field var="jid">
+					<value>lxp@gyoa</value>
+				</field>
+				<field var="Username">
+					<value>lxp</value>
+				</field>
+				<field var="Name">
+					<value></value>
+				</field>
+				<field var="Email">
+					<value>admin</value>
+				</field>
+			</item>
+			<item>
+			<field var="FORM_TYPE" type="hidden"/>
+		</x>
+	</query>
+</iq>
+====================================================================================================
+
+获取可选的搜索字段
+<iq type="get" id="sd82" to="search.gyoa">
+	<query xmlns="jabber:iq:search" xml:lang="zh-cn"/>
+</iq>
+返回
+<iq xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" type="result" id="sd82" from="search.gyoa" to="lxp@gyoa/潘迪安">
+	<query xmlns="jabber:iq:search">
+		<instructions>The following fields are available for searching. Wildcard (*) characters are allowed as part the of query.</instructions>
+		<first/>
+		<last/>
+		<nick/>
+		<email/>
+		<x xmlns="jabber:x:data" type="form">
+			<title>Advanced User Search</title>
+			<instructions>The following fields are available for searching. Wildcard (*) characters are allowed as part the of query.</instructions>
+			<field var="FORM_TYPE" type="hidden">
+				<value>jabber:iq:search</value>
+			</field>
+			<field label="Search" var="search" type="text-single">
+				<required/>
+			</field>
+			<field label="Username" var="Username" type="boolean">
+				<value>1</value>
+			</field>
+			<field label="Name" var="Name" type="boolean">
+				<value>1</value>
+			</field>
+			<field label="Email" var="Email" type="boolean">
+				<value>1</value>
+			</field>
+		</x>
+	</query>
+</iq>
+==========================================================================================
+执行查询，这里只查询Username
+<iq type="set" id="sd83" to="search.gyoa">
+	<query xml:lang="zh-cn" xmlns="jabber:iq:search">
+		<x type="submit" xmlns="jabber:x:data">
+			<field var="FORM_TYPE">
+				<value>jabber:iq:search</value>
+			</field>
+			<field var="search">
+				<value>admin</value>
+			</field>
+			<field var="Username">
+				<value>1</value>
+			</field>
+			<field var="Name">
+				<value>0</value>
+			</field>
+			<field var="Email">
+				<value>0</value>
+			</field>
+		</x>
+	</query>
+</iq>
+返回
+<iq xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" type="result" id="sd85" from="search.gyoa" to="lxp@gyoa/潘迪安">
+	<query xmlns="jabber:iq:search">
+		<x xmlns="jabber:x:data" type="result">
+			<reported>
+				<field label="JID" var="jid"/>
+				<field label="Username" var="Username"/>
+				<field label="Name" var="Name"/>
+				<field label="Email" var="Email"/>
+			</reported>
+			<item>
+				<field var="jid">
+					<value>admin@gyoa</value>
+				</field>
+				<field var="Username">
+					<value>admin</value>
+				</field>
+				<field var="Name">
+					<value>Administrator</value>
+				</field>
+				<field var="Email">
+					<value>admin</value>
+				</field>
+			</item>
+			<field var="FORM_TYPE" type="hidden"/>
+		</x>
+	</query>
+</iq>
