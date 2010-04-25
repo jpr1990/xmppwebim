@@ -20,7 +20,7 @@
 				service : '/http-bind/',
 				path : 'webim',
 				resource: 'webim',
-				domain: 'gyoa',
+				domain: 'viking',
 				workspaceClass : 'xmppIMPanel',
 				dateFormat: 'hh:mm:ss',
 				title: 'WEB IM',
@@ -271,6 +271,7 @@
 					thisComponent.initUpdatePresenceMenu();
 					thisComponent.initSearchBar();
 					thisComponent.initToolbar();
+					thisComponent.initAddContactDlg();
 					//发送在线的Presence
 					thisComponent.updatePresence($.xmppIM.PresenceMode.available, '8');
 				});
@@ -379,20 +380,6 @@
 				}).mouseout(function(){
 					$(this).parent().removeClass('ui-state-hover');
 				});
-				//选择添加好友的方式
-				$('#xmppIM_addContact_Dialog').find('[name="xmppIM_searchJID"]:radio').click(function(){
-					if($(this).val() == 1){//直接输入帐号
-						$('#xmppIM_searchJID').add('#xmppIM_searchButton_Search').show();
-						$('#xmppIM_searchDetail').add('#xmppIM_searchButton_add')
-							.add('#xmppIM_searchButton_preScreen')
-							.add('#xmppIM_searchButton_Continue').hide();
-					}else{//查找
-						$('#xmppIM_searchJID').add('#xmppIM_searchButton_preScreen')
-							.add('#xmppIM_searchButton_add').add('#xmppIM_searchButton_Continue').hide();
-						$('#xmppIM_searchDetail').add('#xmppIM_searchButton_Search').show();
-					}
-				});
-				
 				$('#xmppIM_addContact').click(function(){
 					//显示添加好友的对话框
 					$('#xmppIM_addContact_Dialog').dialog({
@@ -404,11 +391,26 @@
 							$('#xmppIM_searchPanel').show();
 							$(event.target).after($('#xmppIM_searchButton').show());
 							$('#xmppIM_rad_searchJID').click();
-						},
-						close: function(event, ui) {
-							$('#xmppIM_rad_searchJID').click();
 						}
 					});
+				});
+			},
+			/**
+			 * 初始化添加好友对话框的按钮事件
+			 */
+			initAddContactDlg : function(){
+				//选择添加好友的方式
+				$('#xmppIM_addContact_Dialog').find('[name="xmppIM_searchJID"]:radio').click(function(){
+					if($(this).val() == 1){//直接输入帐号
+						$('#xmppIM_searchJID').show();
+						$('#xmppIM_searchDetail').hide();
+						thisComponent.showAddUserBtn('xmppIM_searchButton_Search');
+						$('#xmppIM_searchJID_error').hide();
+					}else{//查找
+						$('#xmppIM_searchJID').hide();
+						$('#xmppIM_searchDetail').show();
+					}
+					thisComponent.showAddUserBtn('xmppIM_searchButton_Search');
 				});
 				//设置添加好友对话框的按钮事件
 				$('#xmppIM_searchButton_Cancel').click(function(){
@@ -421,18 +423,11 @@
 						thisComponent.searchForJID();
 					}else{
 						thisComponent.searchForDetail();
-					}
-					$(this).hide();
-					thisComponent.showAddUserBtn('xmppIM_searchButton_preScreen');
+					}					
 				});
 				//添加好友按钮
 				$('#xmppIM_searchButton_add').click(function(){
-					var jid = $('#xmppIM_searchJID_resultJID').text();
-					$('#xmppIM_searchJID_result').hide();
-					$('#xmppIM_searchJID_resultInfo').html('已发出添加好友的请求，请等待对方确认');
-					thisComponent.sendAddContactIQ(jid);
-					$('#xmppIM_searchButton_Cancel > span').text('完成');
-					thisComponent.showAddUserBtn('xmppIM_searchButton_Continue');
+					thisComponent.addContact();
 				});
 				//上一步
 				$('#xmppIM_searchButton_preScreen').click(function(){
@@ -440,6 +435,13 @@
 					$('#xmppIM_searchJID_result').add('#xmppIM_searchButton_add').hide();
 					$('#xmppIM_searchPanel').add('#xmppIM_searchButton_Search').show();
 					$('#xmppIM_searchPanel').find('input[type="text"]').val('');
+				});
+				//继续添加好友
+				$('#xmppIM_searchButton_Continue').click(function(){
+					$('#xmppIM_searchPanel').show();
+					$('#xmppIM_searchJID_result').hide();
+					$('#xmppIM_searchPanel').find('input[type="text"]').val('');
+					thisComponent.showAddUserBtn('xmppIM_searchButton_Search');
 				});
 			},
 			/**
@@ -451,60 +453,81 @@
 				$.each(arguments, function(i,id){
 					$('#'+id).show();
 				});
-			},
+			},			
 			/**
 			 * 添加联系人，
 			 * jid	对方的jid
 			 * type	1直接输入用户名添加，2通过查找用户然后添加
 			 */
-			addContact : function(jid){
-				var type = $('[name="xmppIM_searchJID"][checked]:radio').val();
-				console.log(type);				
-				var queryIQ = $iq({type: 'get', from:thisComponent.curUserJid, to: jid}).c('query', {xmlns: Strophe.NS.DISCO_INFO});
-				thisComponent.connection.sendIQ(queryIQ.tree(), function(iq){						
-					$('#xmppIM_searchJID_resultInfo').html('已发出添加好友的请求，请等待对方确认');
-					thisComponent.sendAddContactIQ(jid);
-				}, function(iq){
-					$('#xmppIM_searchJID_resultInfo').text('找不到该用户');
-				});
+			addContact : function(){
+				var jid = $('#xmppIM_searchJID_resultJID').text();
+				var nickName = $.trim($('#xmppIM_searchJID_resultNickname').val());
+				var group = $('#xmppIM_searchJID_resultGroup').val();
+				$('#xmppIM_searchJID_addContact').hide();
+				$('#xmppIM_searchJID_resultInfo').html('已添加'+jid+'到您的联系人列表，请等待对方确认您的请求');
+				thisComponent.sendAddContactIQ(jid, nickName, group);
+				thisComponent.showAddUserBtn('xmppIM_searchButton_Continue');
 			},
 			/**
 			 * 发送添加好友请求的IQ
 			 */
-			sendAddContactIQ : function(jid){				
-				var iq = $iq({type: 'set'}).c('query', {xmlns: Strophe.NS.ROSTER}).c('item', {'jid': jid});
+			sendAddContactIQ : function(jid, nickName, groupName){
+				var iq = $iq({type: 'set'}).c('query', {xmlns: Strophe.NS.ROSTER});
+				if(nickName != ''){
+					iq.c('item', {'jid': jid, 'name':nickName});
+				}else{
+					iq.c('item', {'jid': jid});
+				}
+				if(groupName != ''){
+					iq.cnode(Strophe.xmlElement('group','',groupName));
+				}
 				thisComponent.connection.sendIQ(iq, function(){
 					var p = $pres({to:jid, type:$.xmppIM.PresenceType.subscribe})
 						.cnode(Strophe.xmlElement('status','','我想加你为好友'));
 					thisComponent.connection.send(p.tree());
 				});
 			},
+			/**
+			 * 直接通过帐号添加好友
+			 */
 			searchForJID : function(){
 				var userId = $('#xmppIM_txtSearchJID').val();
 				if($.trim(userId) != ''){
 					var jid = thisComponent.makeJID(userId, true);
-					var queryIQ = $iq({type: 'get', from:thisComponent.curUserJid, to: jid}).c('query', {xmlns: Strophe.NS.DISCO_INFO});
-					$('#xmppIM_searchJID_resultInfo').show().text('正在查询……');
-					$('#xmppIM_searchPanel').hide();
-					$('#xmppIM_searchJID_result').show();
-					$('#xmppIM_searchJID_error').text('');
-					thisComponent.connection.sendIQ(queryIQ.tree(), function(iq){
-						$('#xmppIM_searchJID_resultJID').text(jid);
-						$('#xmppIM_searchJID_resultNickname').val(userId);
-						thisComponent.createGroupSelect($('#xmppIM_searchJID_resultGroup'));
-						$('#xmppIM_searchJID_addContact').add('#xmppIM_searchButton_add').show();
-						$('#xmppIM_searchJID_resultInfo').html('<b>添加该用户到您的联系人名单</b>');
-					}, function(iq){
-						$('#xmppIM_searchJID_resultInfo').text('找不到该用户');
-					});
+					if(thisComponent.isExistInContactList(jid)){
+						$('#xmppIM_searchJID_error').show().text('该用户已在您联系人列表中');
+					}else{
+						var queryIQ = $iq({type: 'get', from:thisComponent.curUserJid, to: jid}).c('query', {xmlns: Strophe.NS.DISCO_INFO});					
+						thisComponent.showAddUserBtn('xmppIM_searchButton_preScreen');
+						$('#xmppIM_searchJID_resultInfo').show().text('正在查询……');
+						$('#xmppIM_searchPanel').add('#xmppIM_searchJID_addContact').hide();
+						$('#xmppIM_searchJID_result').show();
+						$('#xmppIM_searchJID_error').text('');
+						thisComponent.connection.sendIQ(queryIQ.tree(), function(iq){
+							$('#xmppIM_searchJID_resultJID').text(jid);
+							$('#xmppIM_searchJID_resultNickname').val(userId);
+							thisComponent.createGroupSelect($('#xmppIM_searchJID_resultGroup'));
+							$('#xmppIM_searchJID_addContact').show();
+							thisComponent.showAddUserBtn('xmppIM_searchButton_preScreen','xmppIM_searchButton_add');
+							$('#xmppIM_searchJID_resultInfo').html('<b>添加该用户到您的联系人名单</b>');
+						}, function(iq){
+							$('#xmppIM_searchJID_resultInfo').text('找不到该用户');						
+						});
+					}
 				}else{
-					$('#xmppIM_searchJID_error').text('请输入要帐号');
+					$('#xmppIM_searchJID_error').show().text('请输入帐号');
 				}
 			},
 			/**
 			 * 按条件查找
 			 */
 			searchForDetail : function(){
+			},
+			/**
+			 * 检查jid是否已在我的联系人列表中
+			 */
+			isExistInContactList : function(jid){
+				return thisComponent.roster.entries[Strophe.getBareJidFromJid(jid)] != undefined;
 			},
 			/**
 			 * 解析服务器提供的服务
@@ -841,6 +864,7 @@
 				$select.each(function(){
 					var $this = $(this);
 					$this.empty();
+					$('<option/>').attr('value', '').text('--请选择--').appendTo($this);
 					$.each(thisComponent.roster.groups, function(name, list){
 						$('<option/>').attr('value', name).text(name).appendTo($this);
 					});
