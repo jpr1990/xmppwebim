@@ -896,9 +896,15 @@
 				$select.each(function(){
 					var $this = $(this);
 					$this.empty();
-					$('<option/>').attr('value', '').text('--请选择--').appendTo($this);
+					$('<option/>', {
+						value: name,
+						text : '--请选择--'
+					}).appendTo($this);
 					$.each(thisComponent.roster.groups, function(name, list){
-						$('<option/>').attr('value', name).text(name).appendTo($this);
+						$('<option/>', {
+							value: name,
+							text : name
+						}).appendTo($this);
 					});
 				});
 			}
@@ -910,47 +916,121 @@
 	 */
 	function DataForm($formIQ){
 		this.iq = $formIQ;
-		this.tableHtml = '';
-		this.template = '<tr><td>{0}{1}<tr><td>';
-		this.fieldTypeHandler = {
-				'boolean' : this.parseBoolean,
-				'hidden' : this.parseHidden,
-				'list-multi' : this.parseListMulti,
-				'list-single' : this.parseListSingle,
-				'text-multi' : this.parseTextMulti,
-				'text-private' : this.parseTextPrivate,
-				'text-single' : this.parseTextSingle
-		};
-		this.parseForm(this.iq);
+		this.tableHtml = '';	
+		if(this.iq){
+			this.parseForm(this.iq);
+		}
 	};
 	$.extend(DataForm.prototype, {
+		/**
+		 * 返回html表单
+		 */
+		toHtml : function(){
+			return this.tableHtml;
+		},
+		/**
+		 * 解析整个表单
+		 */
 		parseForm : function(iq){
 			if(iq.find('x[xmlns="jabber:x:data"][type="form"]').length > 0){
 				var _this = this;
+				var fieldTypeHandler = {
+						'boolean' : _this.parseBoolean,
+						'hidden' : _this.parseHidden,
+						'list-multi' : _this.parseListMulti,
+						'list-single' : _this.parseListSingle,
+						'text-multi' : _this.parseTextMulti,
+						'text-private' : _this.parseTextPrivate,
+						'text-single' : _this.parseTextSingle
+				};
+				var tableTemplate = '<table width="100%" border="0" cellspacing="0" cellpadding="0">{0}</table>';
+				var template = '<tr><td>{0}<tr><td>';
 				iq.find('field').each(function(){
 					var type = $(this).attr('type');
-					if(this.fieldTypeHandler[type]){
-						this.fieldTypeHandler[type]();
+					if(fieldTypeHandler[type]){
+						_this.tableHtml += $.xmppIM.util.format(template, fieldTypeHandler[type]($(this), _this));
 					}
 				});
+				_this.tableHtml = $.xmppIM.util.format(tableTemplate, _this.tableHtml);
 			}
 		},
-		parseBoolean : function($f){
-			var name = $f.attr('var');
-			var label = $f.attr('label');
-			var value = $f.children('value').text();
+		parseBoolean : function($f, _this){
+			var template = '<input name="{0}" type="checkbox" value="{1}" checked="checked" required="{2}"/><label for="{0}">{3}</label>';
+			var o = _this.getFieldObj($f);
+			return $.xmppIM.util.format(template, o.name,  o.value, o.required, o.label);
 		},
-		parseHidden : function($f){
+		parseHidden : function($f, _this){
+			var template = '<input name="{0}" type="hidden" value="{1}"/>';
+			console.log($f);
+			var o = _this.getFieldObj($f);
+			return $.xmppIM.util.format(template, o.name,  o.value);
 		},
-		parseListMulti : function($f){
+		parseListMulti : function($f, _this){
+			var template = '<label for="{0}">{3}</label>:<select name="{0}" multiple="multiple" size="4" required="{2}">{1}</select>';
+			return _this.parseList($f, template, _this);
 		},
-		parseListSingle : function($f){
+		parseListSingle : function($f, _this){
+			var template = '<label for="{0}">{3}</label>:<select name="{0}" required="{2}">{1}</select>';
+			return _this.parseList($f, template, _this);
 		},
-		parseTextMulti : function($f){
+		/**
+		 * 辅助函数
+		 */
+		parseList : function($f, template, _this){
+			var optionTemplate = '<option value="{0}" {1}>{2}</option>';
+			var selected = 'selected="selected"';
+			var options = '';
+			var o = _this.getFieldObj($f);
+			console.log(o);
+			$.each(o.option, function(i,n){
+				options += $.xmppIM.util.format(optionTemplate, n.value, n.value==o.value?selected:'', o.label);
+			});
+			return $.xmppIM.util.format(template, o.name, options, o.required, o.label);
 		},
-		parseTextPrivate : function($f){
+		parseTextMulti : function($f, _this){
+			var template = '<label for="{0}">{3}</label>:<textarea name="{0}" value="{1}" required="{2}"></textarea>';
+			var o = _this.getFieldObj($f);
+			return $.xmppIM.util.format(template, o.name, o.value, o.required, o.label);
 		},
-		parseTextSingle : function($f){
+		parseTextPrivate : function($f, _this){
+			var template = '<label for="{0}">{3}</label>:<input name="{0}" type="password" value="{1}" required="{2}"/>';
+			var o = _this.getFieldObj($f);
+			return $.xmppIM.util.format(template, o.name, o.value, o.required, o.label);
+		},
+		parseTextSingle : function($f, _this){
+			var template = '<label for="{0}">{3}</label>:<input name="{0}" type="text" value="{1}" required="{2}"/>';
+			var o = _this.getFieldObj($f);
+			return $.xmppIM.util.format(template, o.name, o.value, o.required, o.label);
+		},
+		/**
+		 * 返回field数据对象
+		 */
+		getFieldObj : function($f){
+			var obj = {};
+			obj['name'] = $f.attr('var');
+			obj['label'] = $f.attr('label');
+			var value = '';
+			if(type == 'text-multi'){
+				$f.children('value').each(function(){
+					value += $(this).text();
+				});
+			}else{
+				value = $f.children('value:eq(0)').text();
+			}
+			obj['value'] = value;
+			obj['required'] = $(this).children('required').length;
+			var type = $f.attr('type');
+			if(type == 'list-multi' || type == 'list-single'){
+				obj['option'] = [];
+				console.log($f.html());
+				$f.children('option').each(function(){
+					var op = {};
+					op['label'] = $(this).attr('label');
+					op['value'] = $(this).children('value').text();
+					obj['option'].push(op);
+				});
+			}
+			return obj;
 		}
 	});	
 	
@@ -967,5 +1047,76 @@
 	function rawOutput(data)
 	{
 		Strophe.log(Strophe.LogLevel.DEBUG, 'SENT: ' + data);
-	}
+	};
+	
+	function test(){
+		var form =  "<iq xmlns=\"jabber:client\" xmlns:stream=\"http://etherx.jabber.org/streams\" type=\"result\" id=\"sd82\" from=\"search.gyoa\" to=\"lxp@gyoa\">"
+			+"	<query xmlns=\"jabber:iq:search\">"
+			+"		<instructions>The following fields are available for searching. Wildcard (*) characters are allowed as part the of query.</instructions>"
+			+"		<first/>"
+			+"		<last/>"
+			+"		<nick/>"
+			+"		<email/>"
+			+"		<x xmlns=\"jabber:x:data\" type=\"form\">"
+			+"			<title>Bot Configuration</title>"
+			+"      <instructions>Fill out this form to configure your new bot!</instructions>"
+			+"      <field type='hidden'"
+			+"             var='FORM_TYPE'>"
+			+"        <value>jabber:bot</value>"
+			+"      </field>"
+			+"      <field type='fixed'><value>Section 1: Bot Info</value></field>"
+			+"      <field type='text-single'"
+			+"             label='The name of your bot'"
+			+"             var='botname'/>"
+			+"      <field type='text-multi'"
+			+"             label='Helpful description of your bot'"
+			+"             var='description'/>"
+			+"      <field type='boolean'"
+			+"             label='Public bot?'"
+			+"             var='public'>"
+			+"        <required/>"
+			+"      </field>"
+			+"      <field type='text-private'"
+			+"             label='Password for special access'"
+			+"             var='password'/>"
+			+"      <field type='fixed'><value>Section 2: Features</value></field>"
+			+"      <field type='list-multi'"
+			+"             label='What features will the bot support?'"
+			+"             var='features'>"
+			+"        <option label='Contests'><value>contests</value></option>"
+			+"        <option label='News'><value>news</value></option>"
+			+"        <option label='Polls'><value>polls</value></option>"
+			+"        <option label='Reminders'><value>reminders</value></option>"
+			+"        <option label='Search'><value>search</value></option>"
+			+"        <value>news</value>"
+			+"        <value>search</value>"
+			+"      </field>"
+			+"      <field type='fixed'><value>Section 3: Subscriber List</value></field>"
+			+"      <field type='list-single'"
+			+"             label='Maximum number of subscribers'"
+			+"             var='maxsubs'>"
+			+"        <value>20</value>"
+			+"        <option label='10'><value>10</value></option>"
+			+"        <option label='20'><value>20</value></option>"
+			+"        <option label='30'><value>30</value></option>"
+			+"        <option label='50'><value>50</value></option>"
+			+"        <option label='100'><value>100</value></option>"
+			+"        <option label='None'><value>none</value></option>"
+			+"      </field>"
+			+"      <field type='fixed'><value>Section 4: Invitations</value></field>"
+			+"      <field type='jid-multi'"
+			+"             label='People to invite'"
+			+"             var='invitelist'>"
+			+"        <desc>Tell all your friends about your new bot!</desc>"
+			+"      </field>"
+			+"		</x>"
+			+"	</query>"
+			+"</iq>";
+		//alert(new DataForm($(form)));
+		//DataForm dataForm = new DataForm($(form));
+		$((new DataForm($(form.replace(/option/g, "options")))).toHtml()).appendTo($('body'));
+	};
+	$(function(){
+		test();
+	});
 })(jQuery);
