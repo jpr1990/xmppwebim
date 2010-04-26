@@ -20,7 +20,7 @@
 				service : '/http-bind/',
 				path : 'webim',
 				resource: 'webim',
-				domain: 'viking',
+				domain: 'gyoa',
 				workspaceClass : 'xmppIMPanel',
 				dateFormat: 'hh:mm:ss',
 				title: 'WEB IM',
@@ -137,7 +137,25 @@
 						}
 					}
 				});
+			},
+			/**
+			 * 格式化字符串
+			 * var a = "I Love {0}, and You Love {1},Where are {0}! {4}";
+			 * format(a,"You","Me")
+			 */
+			format : function() {
+			    if( arguments.length == 0 )
+			        return null;
+			    var str = arguments[0];
+			    for(var i=1;i<arguments.length;i++) {
+			        var re = new RegExp('\\{' + (i-1) + '\\}','gm');
+			        str = str.replace(re, arguments[i]);
+			    }
+			    return str;
 			}
+	};
+	
+	$.xmppIM.message = {
 			
 	};
 	
@@ -157,8 +175,14 @@
 			roster : {presence:{}, groups:{}, entries:{}}, //保存用户的联系人列表，还包括分组列表和在线状态
 			hasInit: false,//是否已初始化
 			curUserJid:'',
-			discoverItems:[],
+			/**
+			 * [
+			 * 	{item, info}
+			 * ]
+			 */
+			discoverItems:{},
 			defaultGroupName:'',//默认分组的名称
+			hasUserSearchService:false,//是否提供搜索用户的服务
 			/**
 			 * 初始化
 			 */
@@ -305,7 +329,7 @@
 				});
 			},
 			/**
-			 * 辅助函数，在initUpdatePresenceMenu里调用
+			 * 更新在线状态
 			 */
 			updatePresence : function(mode, priority){
 				var status = thisComponent.setting.presence[mode];
@@ -535,10 +559,18 @@
 			onDiscoverItems : function(iq){
 				$(iq).find('item').each(function(){
 					var $this = $(this);
-					var item = {jid:'', name:''};
-					item.jid = $this.attr('jid');
-					item.name = $this.attr('name');
-					thisComponent.discoverItems.push(item);
+					var obj = {item:$this, info:{}};
+					var jid = $this.attr('jid');
+					thisComponent.discoverItems[jid] = obj;
+					var queryInfo = $iq({type: 'get', to: jid}).c('query', {xmlns: Strophe.NS.DISCO_INFO});
+					thisComponent.connection.sendIQ(queryInfo, function(iq){
+						thisComponent.discoverItems[jid].info = $(iq);
+						//检查是否搜索用户的服务
+						if($(iq).find('feature[var="'+Strophe.NS.SEARCH_USER+'"]').length > 0 
+								&& $(iq).find('identity[category="directory"][type="user"]').length > 0){
+							hasUserSearchService = true;
+						}
+					});
 				});
 			},
 			/**
@@ -872,6 +904,55 @@
 			}
 		};
 	};
+	
+	/**
+	 * 类，解析DataForm生成相应的html
+	 */
+	function DataForm($formIQ){
+		this.iq = $formIQ;
+		this.tableHtml = '';
+		this.template = '<tr><td>{0}{1}<tr><td>';
+		this.fieldTypeHandler = {
+				'boolean' : this.parseBoolean,
+				'hidden' : this.parseHidden,
+				'list-multi' : this.parseListMulti,
+				'list-single' : this.parseListSingle,
+				'text-multi' : this.parseTextMulti,
+				'text-private' : this.parseTextPrivate,
+				'text-single' : this.parseTextSingle
+		};
+		this.parseForm(this.iq);
+	};
+	$.extend(DataForm.prototype, {
+		parseForm : function(iq){
+			if(iq.find('x[xmlns="jabber:x:data"][type="form"]').length > 0){
+				var _this = this;
+				iq.find('field').each(function(){
+					var type = $(this).attr('type');
+					if(this.fieldTypeHandler[type]){
+						this.fieldTypeHandler[type]();
+					}
+				});
+			}
+		},
+		parseBoolean : function($f){
+			var name = $f.attr('var');
+			var label = $f.attr('label');
+			var value = $f.children('value').text();
+		},
+		parseHidden : function($f){
+		},
+		parseListMulti : function($f){
+		},
+		parseListSingle : function($f){
+		},
+		parseTextMulti : function($f){
+		},
+		parseTextPrivate : function($f){
+		},
+		parseTextSingle : function($f){
+		}
+	});	
 	
 	//debug
 	Strophe.log = function (level, msg) {
