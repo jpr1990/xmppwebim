@@ -1,38 +1,57 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Insert title here</title>
-</head>
-<body>
-<div id="xmppIM_addContact_Dialog">
-  <p>查找方式</p>
-  <p>
-    <label>
-    <input name="xmppIM_searchJID" type="radio" id="xmppIM_searchJID" title="精确查找" value="1" checked>
-    精确查找 </label>
-    <br/>
-    <label>
-    <input name="xmppIM_searchJID" type="radio" id="xmppIM_searchDetail" title="按条件查找" value="2">
-    按条件查找 </label>
-  </p>
-  <p>帐号：
-    <label>
-    <input type="text" name="textfield">
-    </label>
-  </p>
-  <div id="xmppIM_">
-    <p>查找关键字：
-      <label>
-      <input type="text" name="textfield2">
-      </label>
-    </p>
-    <p>
-      <label>
-      <input type="checkbox" name="checkbox" value="checkbox">
-      帐号 </label>
-    </p>
-  </div>
+<div id="xmppIM_addContact_Dialog" style="display:none;">
+	<span id="xmppIM_searchJID_error" style="display:none;position:absolute;right:0;" class="ui-state-highlight ui-corner-all">		    	
+	</span>
+	<div id="xmppIM_searchPanel">
+	  <div>您希望用何种方式添加联系人？</div>
+	  <div>
+	    <label>
+		    <input name="xmppIM_searchJID" type="radio" id="xmppIM_rad_searchJID" title="精确查找" value="1" checked>
+		   	 我已知道该联系人的帐号 
+	    </label>
+		
+	    <br/>
+	    <label>
+	    	<input name="xmppIM_searchJID" type="radio" id="xmppIM_rad_searchDetail" title="按条件查找" value="2">
+	   		 按条件查找 
+	    </label>
+	  </div>	  
+	  <div id="xmppIM_searchJID">
+		 	 帐号：
+		    <input type="text" id="xmppIM_txtSearchJID">		    
+	    </div>
+	  <div id="xmppIM_searchDetail">
+	    <div>使用的搜索服务：
+	    	<select id="xmppIM_searchService">	    		
+	    	</select>
+	    </div>
+	    <div id="xmppIM_searchForm" class="xmppIM_searchForm">
+	    </div>
+	  </div>
+  </div>  	
+	<div id="xmppIM_searchDetail_result"></div>
 </div>
-</body>
-</html>
+
+<div id="xmppIM_searchJID_result" style="display:none;">
+  	<div id="xmppIM_searchJID_resultInfo"></div>
+  	<div id="xmppIM_searchJID_addContact" style="display:none;">
+  		<div id="xmppIM_searchJID_resultJID" style="padding-left:3em;"></div>
+  		<div>昵称：<input type="text" maxlength="10" id="xmppIM_searchJID_resultNickname"></input></div>
+  		<div>分组：<select id="xmppIM_searchJID_resultGroup"></select></div>
+  		<div></div>
+  	</div>
+</div>
+
+<div style="display:none;" class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix" id="xmppIM_searchButton">
+	<button id="xmppIM_searchButton_Cancel" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+		<span class="ui-button-text">关闭</span>
+	</button>
+	<button id="xmppIM_searchButton_Continue" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+		<span class="ui-button-text">继续加好友</span>
+	</button>
+	<button id="xmppIM_searchButton_Search" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+		<span class="ui-button-text">查找</span>
+	</button>
+	<button id="xmppIM_searchButton_preScreen" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+		<span class="ui-button-text">上一步</span>
+	</button>
+</div>
