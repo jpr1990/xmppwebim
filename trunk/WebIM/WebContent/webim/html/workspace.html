@@ -77,6 +77,8 @@
 </div>
 
 <div id="xmppIM_addContact_Dialog" style="display:none;">
+	<span id="xmppIM_searchJID_error" style="display:none;position:absolute;right:0;" class="ui-state-highlight ui-corner-all">		    	
+	</span>
 	<div id="xmppIM_searchPanel">
 	  <div>您希望用何种方式添加联系人？</div>
 	  <div>
@@ -93,31 +95,28 @@
 	  </div>	  
 	  <div id="xmppIM_searchJID">
 		 	 帐号：
-		    <input type="text" id="xmppIM_txtSearchJID">
-		    <span id="xmppIM_searchJID_error" style="display:none;" class="ui-state-error ui-corner-all">		    	
-		    </span>
+		    <input type="text" id="xmppIM_txtSearchJID">		    
 	    </div>
 	  <div id="xmppIM_searchDetail">
-	    <div>查找关键字：
-	      	<input type="text" name="xmppIM_txtSearchKey">
+	    <div>使用的搜索服务：
+	    	<select id="xmppIM_searchService">	    		
+	    	</select>
 	    </div>
-	    <div>
-	      <label>
-	      	<input type="checkbox" name="checkbox" value="checkbox">帐号
-	      </label>
+	    <div id="xmppIM_searchForm" class="xmppIM_searchForm">
 	    </div>
 	  </div>
-  </div>  
-	<div id="xmppIM_searchJID_result" style="display:none;">
-	  	<div id="xmppIM_searchJID_resultInfo"></div>
-	  	<div id="xmppIM_searchJID_addContact" style="display:none;">
-	  		<div id="xmppIM_searchJID_resultJID" style="padding-left:3em;"></div>
-	  		<div>昵称：<input type="text" maxlength="10" id="xmppIM_searchJID_resultNickname"></input></div>
-	  		<div>分组：<select id="xmppIM_searchJID_resultGroup"></select></div>
-	  		<div></div>
-	  	</div>
-	</div>
+  </div>  	
 	<div id="xmppIM_searchDetail_result"></div>
+</div>
+
+<div id="xmppIM_searchJID_result" style="display:none;">
+  	<div id="xmppIM_searchJID_resultInfo"></div>
+  	<div id="xmppIM_searchJID_addContact" style="display:none;">
+  		<div id="xmppIM_searchJID_resultJID" style="padding-left:3em;"></div>
+  		<div>昵称：<input type="text" maxlength="10" id="xmppIM_searchJID_resultNickname"></input></div>
+  		<div>分组：<select id="xmppIM_searchJID_resultGroup"></select></div>
+  		<div></div>
+  	</div>
 </div>
 
 <div style="display:none;" class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix" id="xmppIM_searchButton">
@@ -129,9 +128,6 @@
 	</button>
 	<button id="xmppIM_searchButton_Search" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
 		<span class="ui-button-text">查找</span>
-	</button>
-	<button id="xmppIM_searchButton_add" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-		<span class="ui-button-text">添加好友</span>
 	</button>
 	<button id="xmppIM_searchButton_preScreen" type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
 		<span class="ui-button-text">上一步</span>

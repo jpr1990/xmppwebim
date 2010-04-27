@@ -113,7 +113,7 @@
 				if (XMPPAddress == null) {
 		            return null;
 		        }
-				return XMPPAddress.replace(/@/, '\\@').replace(/\//g, '\\/');
+				return XMPPAddress.replace(/@/, '\\@').replace(/\//g, '\\/').replace(/\./g, '\\.');
 			},
 			/**
 			 * 把字符串转换成整数，如果转换失败则返回0
@@ -182,7 +182,7 @@
 			 */
 			discoverItems:{},
 			defaultGroupName:'',//默认分组的名称
-			hasUserSearchService:false,//是否提供搜索用户的服务
+			userSearchService:[],//提供的搜索用户服务{'jid':jid, 'name':$this.attr('name')}
 			/**
 			 * 初始化
 			 */
@@ -191,11 +191,23 @@
 				this.setting = $.extend(true, {}, this.setting, conf);
 				this.connection = new Strophe.Connection(this.setting.service);
 				this.container.addClass(this.setting.workspaceClass);
+				this.initNamespace();
 				this.showLoginDlg();
 				//debug
 				if(IS_DEBUG){
-					jQuery('<div/>').css('position','absolute').css('width','100%').css('height','300px')
-					.css('bottom','0px').css('overflow-y','auto').css('background','#000').css('color','#FFFFFF').css('z-index','999').attr('id', 'logger').appendTo(jQuery('body:eq(0)'));
+					jQuery('<div/>', {
+						id:'logger',
+						css:{
+							position:'absolute',
+							width:'100%',
+							height:'300px',
+							bottom:'0px',
+							overflowY:'auto',
+							background:'#000000',
+							color:'#FFFFFF',
+							zIndex:'999'
+						}
+					}).appendTo(jQuery('body'));
 					this.connection.rawInput = rawInput;
 				    this.connection.rawOutput = rawOutput;
 				}
@@ -205,7 +217,8 @@
 			 */
 			initNamespace : function(){
 				Strophe.addNamespace('VCARD_TEMP', 'vcard-temp');
-				Strophe.addNamespace('SEARCH_USER', 'jabber:iq:search');				
+				Strophe.addNamespace('SEARCH_USER', 'jabber:iq:search');
+				Strophe.addNamespace('DATA_FORM', 'jabber:x:data');
 			},
 			/**
 			 * 加载并显示登录界面
@@ -411,7 +424,7 @@
 						width : 400,
 						title : '查找或添加联系人',
 						open: function(event, ui){
-							$('#xmppIM_searchDetail').add('#xmppIM_searchJID_result').hide();
+							$('#xmppIM_searchDetail').hide();
 							$('#xmppIM_searchPanel').show();
 							$(event.target).after($('#xmppIM_searchButton').show());
 							$('#xmppIM_rad_searchJID').click();
@@ -433,12 +446,16 @@
 					}else{//查找
 						$('#xmppIM_searchJID').hide();
 						$('#xmppIM_searchDetail').show();
+						$('#xmppIM_searchService').change();
 					}
 					thisComponent.showAddUserBtn('xmppIM_searchButton_Search');
 				});
 				//设置添加好友对话框的按钮事件
 				$('#xmppIM_searchButton_Cancel').click(function(){
 					$('#xmppIM_addContact_Dialog').dialog('close');
+				});
+				$('#xmppIM_searchJID').focus(function(){
+					thisComponent.showSearchMessage();
 				});
 				//查找按钮
 				$('#xmppIM_searchButton_Search').click(function(){
@@ -447,25 +464,50 @@
 						thisComponent.searchForJID();
 					}else{
 						thisComponent.searchForDetail();
-					}					
-				});
-				//添加好友按钮
-				$('#xmppIM_searchButton_add').click(function(){
-					thisComponent.addContact();
-				});
+					}
+				});				
 				//上一步
 				$('#xmppIM_searchButton_preScreen').click(function(){
 					$(this).hide();
-					$('#xmppIM_searchJID_result').add('#xmppIM_searchButton_add').hide();
 					$('#xmppIM_searchPanel').add('#xmppIM_searchButton_Search').show();
 					$('#xmppIM_searchPanel').find('input[type="text"]').val('');
 				});
 				//继续添加好友
 				$('#xmppIM_searchButton_Continue').click(function(){
 					$('#xmppIM_searchPanel').show();
-					$('#xmppIM_searchJID_result').hide();
 					$('#xmppIM_searchPanel').find('input[type="text"]').val('');
 					thisComponent.showAddUserBtn('xmppIM_searchButton_Search');
+				});
+				//选择搜索服务	
+				$('#xmppIM_searchService').change(function(){
+					var value = $(this).val();
+					var $form = $('#'+$.xmppIM.util.escapeAddress(value));
+					if($form.length > 0){
+						$('#xmppIM_searchForm > div').hide();
+						$form.show();
+					}else{
+						//加载表单
+						$('#xmppIM_searchForm > div').hide();
+						if($('#xmppIM_searchFormMsg').length == 0){
+							$('<span/>',{
+								id:'xmppIM_searchFormMsg',
+								text:'正在加载表单……',
+								color:'red'
+							}).appendTo('#xmppIM_searchForm');
+						}else{
+							$('#xmppIM_searchFormMsg').text('正在加载表单……');
+						}
+						var iq = $iq({type:'get', to:value}).c('query', {xmlns: Strophe.NS.SEARCH_USER, 'xml:lang':'zh-cn'});
+						thisComponent.connection.sendIQ(iq, function(formIQ){
+							console.log('这个', formIQ);
+							$('#xmppIM_searchFormMsg').remove();
+							var dataForm = new DataForm(formIQ);
+							var $div = $('<div/>',{id:value}).appendTo('#xmppIM_searchForm').data('dataForm', dataForm);
+							dataForm.toJQuery().appendTo($div);
+						}, function(){
+							$('#xmppIM_searchFormMsg').text('加载表单时出错');
+						});
+					}
 				});
 			},
 			/**
@@ -493,6 +535,82 @@
 				thisComponent.showAddUserBtn('xmppIM_searchButton_Continue');
 			},
 			/**
+			 * 直接通过帐号添加好友
+			 */
+			searchForJID : function(){
+				var userId = $('#xmppIM_txtSearchJID').val();
+				if($.trim(userId) != ''){
+					var jid = thisComponent.makeJID(userId, true);
+					if(thisComponent.isExistInContactList(jid)){
+						$('#xmppIM_searchJID_error').show().text('该用户已在您联系人列表中');
+					}else{
+						var queryIQ = $iq({type: 'get', from:thisComponent.curUserJid, to: jid}).c('query', {xmlns: Strophe.NS.DISCO_INFO});					
+						thisComponent.showSearchMessage('正在查询……');
+						thisComponent.connection.sendIQ(queryIQ.tree(), function(iq){
+							thisComponent.showSearchMessage();
+							thisComponent.openAddContactDlg();
+							$('#xmppIM_searchJID_resultJID').text(jid);
+							$('#xmppIM_searchJID_resultNickname').val(userId);
+							thisComponent.createGroupSelect($('#xmppIM_searchJID_resultGroup'));
+							$('#xmppIM_searchJID_addContact').show();
+							$('#xmppIM_searchJID_resultInfo').html('<b>添加该用户到您的联系人名单</b>');
+						}, function(iq){
+							thisComponent.showSearchMessage('找不到该用户',true);
+						});
+					}
+				}else{
+					//$('#xmppIM_searchJID_error').show().text('请输入帐号');
+					thisComponent.showSearchMessage('请输入帐号',true);
+				}
+			},
+			/**
+			 * 搜索时显示相关信息
+			 */
+			showSearchMessage : function(msg, isError){
+				if(msg){
+					if(isError){
+						$('#xmppIM_searchJID_error').removeClass('ui-state-highlight')
+							.addClass('ui-state-error').text(msg);
+					}else{
+						$('#xmppIM_searchJID_error').removeClass('ui-state-error')
+						.addClass('ui-state-highlight').text(msg);
+					}
+				}else{
+					$('#xmppIM_searchJID_error').hide();
+				}
+			},
+			/**
+			 * 打开添加好友的对话框
+			 * 辅助函数
+			 */
+			openAddContactDlg : function(){
+				$('#xmppIM_searchJID_result').dialog({
+					width:310,
+					height:220,
+					modal:true,
+					buttons:{
+						'关闭' : function(){
+							$(this).dialog('close');
+						},
+						'添加好友'	: function(){
+							thisComponent.addContact();
+						}
+					}
+				});
+			},
+			/**
+			 * 按条件查找
+			 */
+			searchForDetail : function(){
+				var val = $('#xmppIM_searchService').val();
+				var iq = $('#'+$.xmppIM.util.escapeAddress(val)).data('dataForm').toSubmitIQ();
+				thisComponent.connection.sendIQ(iq, function(result){
+					console.log('搜索结果', result);
+				}, function(result){
+					console.log('搜索出错', result);
+				});
+			},
+			/**
 			 * 发送添加好友请求的IQ
 			 */
 			sendAddContactIQ : function(jid, nickName, groupName){
@@ -510,42 +628,6 @@
 						.cnode(Strophe.xmlElement('status','','我想加你为好友'));
 					thisComponent.connection.send(p.tree());
 				});
-			},
-			/**
-			 * 直接通过帐号添加好友
-			 */
-			searchForJID : function(){
-				var userId = $('#xmppIM_txtSearchJID').val();
-				if($.trim(userId) != ''){
-					var jid = thisComponent.makeJID(userId, true);
-					if(thisComponent.isExistInContactList(jid)){
-						$('#xmppIM_searchJID_error').show().text('该用户已在您联系人列表中');
-					}else{
-						var queryIQ = $iq({type: 'get', from:thisComponent.curUserJid, to: jid}).c('query', {xmlns: Strophe.NS.DISCO_INFO});					
-						thisComponent.showAddUserBtn('xmppIM_searchButton_preScreen');
-						$('#xmppIM_searchJID_resultInfo').show().text('正在查询……');
-						$('#xmppIM_searchPanel').add('#xmppIM_searchJID_addContact').hide();
-						$('#xmppIM_searchJID_result').show();
-						$('#xmppIM_searchJID_error').text('');
-						thisComponent.connection.sendIQ(queryIQ.tree(), function(iq){
-							$('#xmppIM_searchJID_resultJID').text(jid);
-							$('#xmppIM_searchJID_resultNickname').val(userId);
-							thisComponent.createGroupSelect($('#xmppIM_searchJID_resultGroup'));
-							$('#xmppIM_searchJID_addContact').show();
-							thisComponent.showAddUserBtn('xmppIM_searchButton_preScreen','xmppIM_searchButton_add');
-							$('#xmppIM_searchJID_resultInfo').html('<b>添加该用户到您的联系人名单</b>');
-						}, function(iq){
-							$('#xmppIM_searchJID_resultInfo').text('找不到该用户');						
-						});
-					}
-				}else{
-					$('#xmppIM_searchJID_error').show().text('请输入帐号');
-				}
-			},
-			/**
-			 * 按条件查找
-			 */
-			searchForDetail : function(){
 			},
 			/**
 			 * 检查jid是否已在我的联系人列表中
@@ -566,9 +648,15 @@
 					thisComponent.connection.sendIQ(queryInfo, function(iq){
 						thisComponent.discoverItems[jid].info = $(iq);
 						//检查是否搜索用户的服务
-						if($(iq).find('feature[var="'+Strophe.NS.SEARCH_USER+'"]').length > 0 
-								&& $(iq).find('identity[category="directory"][type="user"]').length > 0){
-							hasUserSearchService = true;
+						if($(iq).find('feature[var="'+Strophe.NS.SEARCH_USER+'"]').length > 0){
+							$(iq).find('identity[category="directory"][type="user"]').each(function(){
+								thisComponent.userSearchService.push({'jid':jid, 'name':$this.attr('name')});
+								//初始化搜索服务的下拉
+								$('<option/>', {
+									value:jid,
+									text:$this.attr('name')
+								}).appendTo($('#xmppIM_searchService'));
+							});
 						}
 					});
 				});
@@ -914,19 +1002,46 @@
 	/**
 	 * 类，解析DataForm生成相应的html
 	 */
-	function DataForm($formIQ){
-		this.iq = $formIQ;
-		this.tableHtml = '';	
+	function DataForm(formIQ){
+		this.iq = $(formIQ);
+		this.tableHtml = '';
+		this.jQueryTable;
 		if(this.iq){
 			this.parseForm(this.iq);
 		}
 	};
 	$.extend(DataForm.prototype, {
 		/**
-		 * 返回html表单
+		 * 返回html表单的jQuery对象
 		 */
-		toHtml : function(){
-			return this.tableHtml;
+		toJQuery : function(){
+			return this.jQueryTable;
+		},
+		/**
+		 * 转换成提交表单的IQ
+		 */
+		toSubmitIQ : function(){
+			var iq = $iq({type: 'set', to: this.iq.attr('from')})
+					.c('query', {xmlns: Strophe.NS.SEARCH_USER, 'xml:lang':"zh-cn"})
+					.c('x', {xmlns: Strophe.NS.DATA_FORM, 'type':"submit"});
+			$(':input',this.jQueryTable).each(function(){
+				var $this = $(this);
+				var field = iq.c('field', {'var': $this.attr('name')});
+				var val = $this.val();
+				if($this.attr('xtype')=='list-multi' && val != null){//多选
+					console.log(val);					
+					$.each(val, function(i, v){
+						field.cnode(Strophe.xmlElement('value','',v)).up();
+					});
+				}else{
+					if($this.attr('xtype')=='boolean'){
+						val = $this.attr('checked') ? '1' : '0'; 
+					}
+					field.cnode(Strophe.xmlElement('value','',val)).up();
+				}
+				field.up();
+			});
+			return iq;
 		},
 		/**
 		 * 解析整个表单
@@ -934,6 +1049,7 @@
 		parseForm : function(iq){
 			if(iq.find('x[xmlns="jabber:x:data"][type="form"]').length > 0){
 				var _this = this;
+				//定义字段的处理函数
 				var fieldTypeHandler = {
 						'boolean' : _this.parseBoolean,
 						'hidden' : _this.parseHidden,
@@ -948,61 +1064,68 @@
 				iq.find('field').each(function(){
 					var type = $(this).attr('type');
 					if(fieldTypeHandler[type]){
-						_this.tableHtml += $.xmppIM.util.format(template, fieldTypeHandler[type]($(this), _this));
+						_this.tableHtml += $.xmppIM.util.format(template, fieldTypeHandler[type].call(_this, $(this)));
 					}
 				});
 				_this.tableHtml = $.xmppIM.util.format(tableTemplate, _this.tableHtml);
+				_this.jQueryTable = $(_this.tableHtml);
 			}
 		},
+		//private
 		parseBoolean : function($f, _this){
-			var template = '<input name="{0}" type="checkbox" value="{1}" checked="checked" required="{2}"/><label for="{0}">{3}</label>';
-			var o = _this.getFieldObj($f);
+			var template = '<input name="{0}" xtype="boolean" type="checkbox" value="{1}" checked="checked" required="{2}"/><label for="{0}">{3}</label>';
+			var o = this.getFieldObj($f);
 			return $.xmppIM.util.format(template, o.name,  o.value, o.required, o.label);
 		},
+		//private
 		parseHidden : function($f, _this){
-			var template = '<input name="{0}" type="hidden" value="{1}"/>';
-			console.log($f);
-			var o = _this.getFieldObj($f);
+			var template = '<input name="{0}" type="hidden" value="{1}" xtype="hidden"/>';
+			var o = this.getFieldObj($f);
 			return $.xmppIM.util.format(template, o.name,  o.value);
 		},
+		//private
 		parseListMulti : function($f, _this){
-			var template = '<label for="{0}">{3}</label>:<select name="{0}" multiple="multiple" size="4" required="{2}">{1}</select>';
-			return _this.parseList($f, template, _this);
+			var template = '<label for="{0}">{3}</label>:<select xtype="list-multi" name="{0}" multiple="multiple" size="4" required="{2}">{1}</select>';
+			return this.parseList($f, template, _this);
 		},
+		//private
 		parseListSingle : function($f, _this){
-			var template = '<label for="{0}">{3}</label>:<select name="{0}" required="{2}">{1}</select>';
-			return _this.parseList($f, template, _this);
+			var template = '<label for="{0}">{3}</label>:<select xtype="list-single" name="{0}" required="{2}">{1}</select>';
+			return this.parseList($f, template, _this);
 		},
 		/**
-		 * 辅助函数
+		 * 辅助函数private
 		 */
 		parseList : function($f, template, _this){
 			var optionTemplate = '<option value="{0}" {1}>{2}</option>';
 			var selected = 'selected="selected"';
 			var options = '';
-			var o = _this.getFieldObj($f);
+			var o = this.getFieldObj($f);
 			console.log(o);
 			$.each(o.option, function(i,n){
 				options += $.xmppIM.util.format(optionTemplate, n.value, n.value==o.value?selected:'', o.label);
 			});
 			return $.xmppIM.util.format(template, o.name, options, o.required, o.label);
 		},
+		//private
 		parseTextMulti : function($f, _this){
-			var template = '<label for="{0}">{3}</label>:<textarea name="{0}" value="{1}" required="{2}"></textarea>';
-			var o = _this.getFieldObj($f);
+			var template = '<label for="{0}">{3}</label>:<textarea xtype="text-multi" name="{0}" value="{1}" required="{2}"></textarea>';
+			var o = this.getFieldObj($f);
 			return $.xmppIM.util.format(template, o.name, o.value, o.required, o.label);
 		},
+		//private
 		parseTextPrivate : function($f, _this){
-			var template = '<label for="{0}">{3}</label>:<input name="{0}" type="password" value="{1}" required="{2}"/>';
-			var o = _this.getFieldObj($f);
+			var template = '<label for="{0}">{3}</label>:<input xtype="text-private" name="{0}" type="password" value="{1}" required="{2}"/>';
+			var o = this.getFieldObj($f);
 			return $.xmppIM.util.format(template, o.name, o.value, o.required, o.label);
 		},
 		parseTextSingle : function($f, _this){
-			var template = '<label for="{0}">{3}</label>:<input name="{0}" type="text" value="{1}" required="{2}"/>';
-			var o = _this.getFieldObj($f);
+			var template = '<label for="{0}">{3}</label>:<input xtype="text-single" name="{0}" type="text" value="{1}" required="{2}"/>';
+			var o = this.getFieldObj($f);
 			return $.xmppIM.util.format(template, o.name, o.value, o.required, o.label);
 		},
 		/**
+		 * private
 		 * 返回field数据对象
 		 */
 		getFieldObj : function($f){
@@ -1074,7 +1197,7 @@
 			+"      <field type='boolean'"
 			+"             label='Public bot?'"
 			+"             var='public'>"
-			+"        <required/>"
+			+"        <required/><value>1</value>"
 			+"      </field>"
 			+"      <field type='text-private'"
 			+"             label='Password for special access'"
@@ -1113,10 +1236,18 @@
 			+"	</query>"
 			+"</iq>";
 		//alert(new DataForm($(form)));
-		//DataForm dataForm = new DataForm($(form));
-		$((new DataForm($(form.replace(/option/g, "options")))).toHtml()).appendTo($('body'));
+		dataForm = new DataForm(form);
+		(dataForm).toJQuery().appendTo($('body'));
+		
 	};
+	function submitTest(){
+		console.log(dataForm.toSubmitIQ().tree());
+	}
+	var dataForm;
 	$(function(){
 		test();
+		$('#btnTest').click(function(){
+			submitTest();
+		});
 	});
 })(jQuery);
