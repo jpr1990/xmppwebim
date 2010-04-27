@@ -239,3 +239,7 @@
 	cursor: pointer;
 }
 
+/*搜索用户的表单*/
+.xmppIM_searchForm{
+	margin:10px 0px 0px 2em;
+}
