@@ -165,14 +165,16 @@
 		var container = $(elem);
 		var setting = $.extend( {}, $.xmppIM.defaults);		
 		var imManager = $.xmppIM.manager;
-		var rosterManager = imManager.getRosterManager();
-		var searchUserDialog = imManager.getSearchUserDialog();
+		var rosterManager;
+		var presenceManager;
+		var searchUserDialog;
+		var chatManager;
 		var connection;
 		return {
 			//connection : {},
 			//container : {},
 			//setting : $.extend( {}, $.xmppIM.defaults),
-			chatRoomDlgList : {},//保存全部聊天对话框
+			//chatRoomDlgList : {},//保存全部聊天对话框
 			/**
 			 * {
 					presence:{jid:{resource:{type, status, priority, mode, language},...}},
@@ -181,7 +183,7 @@
 				}
 			 */
 			//roster : {presence:{}, groups:{}, entries:{}}, //保存用户的联系人列表，还包括分组列表和在线状态
-			hasInit: false,//是否已初始化
+			//hasInit: false,//是否已初始化
 			/**
 			 * [
 			 * 	{item, info}
@@ -206,18 +208,12 @@
 					jQuery('<div/>', {
 						id:'logger',
 						css:{
-							position:'absolute',
-							width:'100%',
-							height:'300px',
-							bottom:'0px',
-							overflowY:'auto',
-							background:'#000000',
-							color:'#FFFFFF',
-							zIndex:'999'
+							position:'absolute',width:'100%',height:'300px',bottom:'0px',
+							overflowY:'auto',background:'#000000',color:'#FFFFFF',zIndex:'999'
 						}
 					}).appendTo(jQuery('body'));
-					this.connection.rawInput = rawInput;
-				    this.connection.rawOutput = rawOutput;
+					connection.rawInput = rawInput;
+				    connection.rawOutput = rawOutput;
 				}
 			},
 			/**
@@ -232,16 +228,16 @@
 			 * 加载并显示登录界面
 			 */
 			showLoginDlg : function() {
-				this.container.load(setting.path + '/html/login.html', function(){
+				container.load(setting.path + '/html/login.html', function(){
 					$('#xmppIM_btnLogin').button().click(function(){
 						var userId = thisComponent.makeJID($('#xmppIM_login_userId').val());
 						var password = $('#xmppIM_login_password').val();
 						setting.userId = userId;
 						setting.password = password;
-						thisComponent.connection.connect(userId, password, thisComponent.onConnect);
+						connection.connect(userId, password, thisComponent.onConnect);
 					});
 				});
-				this.container.dialog({
+				container.dialog({
 					height : 500,
 					width : 260,
 					title : setting.title,
@@ -263,20 +259,19 @@
 				} else if (status == Strophe.Status.DISCONNECTED) {
 					// 断开连接
 				} else if (status == Strophe.Status.CONNECTED) {
-					imManager.init(setting, container, connection);
 					// 登陆成功
-					thisComponent.container.dialog('option', 'title', setting.title + ' - ' + setting.userId);
+					container.dialog('option', 'title', setting.title + ' - ' + setting.userId);
 					//初始化
 					thisComponent.attachHandler.call(thisComponent);
 					thisComponent.initWorkspace.call(thisComponent);
 					$(window).unload(function() { 
-						thisComponent.connection.disconnect();
+						connection.disconnect();
 					});
 				}else if(status == Strophe.Status.AUTHFAIL){
-					thisComponent.connection.disconnect();
+					connection.disconnect();
 				}else if(status == Strophe.Status.ATTACHED){
 				}else if(status == Strophe.Status.ERROR){
-					thisComponent.connection.disconnect();
+					connection.disconnect();
 				}
 			},
 			/**
@@ -284,26 +279,26 @@
 			 */
 			attachHandler : function(){
 				//this.connection
-				this.connection.addHandler(this.onMessage, null, 'message', 'chat', null, null);
+				//this.connection.addHandler(this.onMessage, null, 'message', 'chat', null, null);
 				this.connection.addHandler(this.onJabberRoster, Strophe.NS.ROSTER, 'iq', null, null, null);
 				this.connection.addHandler(this.onDiscoverItems, Strophe.NS.DISCO_ITEMS, 'iq', null, null, null);
-				this.connection.addHandler(this.onPresence, null, 'presence', null, null, null);
+				//this.connection.addHandler(this.onPresence, null, 'presence', null, null, null);
 			},
 			/**
 			 * 登陆成功后初始化IM界面
 			 */
 			initWorkspace : function(){
-				this.container.load(setting.path + '/html/workspace.html', function(){
+				container.load(setting.path + '/html/workspace.html', function(){
 					setting['defaultGroupName'] = $('#'+setting.defaultGroupId)
 													.find('span[type="xmppIM_contactGroup_Header"]:eq(0)')
-													.text();
+													.text();					
 					$('#xmppIM_contactPanel').tabs();
 					//查询服务器提供的服务
 					var queryDiscoverItem = $iq({type: 'get', to: setting.domain}).c('query', {xmlns: Strophe.NS.DISCO_ITEMS});
-					thisComponent.connection.send(queryDiscoverItem.tree());
+					connection.send(queryDiscoverItem.tree());
 					//获取联系人
 					var queryRoster = $iq({type: 'get'}).c('query', {xmlns: Strophe.NS.ROSTER});
-					thisComponent.connection.send(queryRoster.tree());
+					connection.send(queryRoster.tree());
 					//聊天对话框的发送按钮事件
 					$('#xmppIM_btnSendMsg').button().live('click', function(){
 						thisComponent.sendMessage($(this));
@@ -318,11 +313,9 @@
 					});
 					thisComponent.initUpdatePresenceMenu();
 					thisComponent.initSearchBar();
-					thisComponent.initToolbar();
-					thisComponent.searchUserDialog = new SearchUserDialog(thisComponent.container, 
-							thisComponent.connection, rosterManager, setting);
+					thisComponent.initToolbar();					
 					//发送在线的Presence
-					thisComponent.updatePresence($.xmppIM.PresenceMode.available, '8');
+					presenceManager.sendPresence($.xmppIM.PresenceMode.available, '8');
 				});
 			},
 			/**
@@ -332,16 +325,16 @@
 				$('#xmppIM_updatePresence').contextMenu('xmppIM_presenceMenu', {
 					bindings : {
 						'available' : function(t) {
-							thisComponent.updatePresence($.xmppIM.PresenceMode.available, '8');
+							presenceManager.sendPresence($.xmppIM.PresenceMode.available, '8');
 						},
 						'chat' : function(t) {
-							thisComponent.updatePresence($.xmppIM.PresenceMode.chat, '10');
+							presenceManager.sendPresence($.xmppIM.PresenceMode.chat, '10');
 						},
 						'away' : function(t) {
-							thisComponent.updatePresence($.xmppIM.PresenceMode.away, '4');
+							presenceManager.sendPresence($.xmppIM.PresenceMode.away, '4');
 						},
 						'dnd' : function(t) {
-							thisComponent.updatePresence($.xmppIM.PresenceMode.dnd, '6');
+							presenceManager.sendPresence($.xmppIM.PresenceMode.dnd, '6');
 						}
 					},
 					triggerEvent : 'click',
@@ -352,25 +345,6 @@
 						return $('#xmppIM_updatePresence').offset().top + 20;
 					}
 				});
-			},
-			/**
-			 * 更新在线状态
-			 */
-			updatePresence : function(mode, priority){
-				var status = setting.presence[mode];
-				if(mode == $.xmppIM.PresenceMode.available){
-					thisComponent.connection.send($pres()
-							.cnode(Strophe.xmlElement('status','',setting.presence[mode])).up()
-							.cnode(Strophe.xmlElement('priority','',priority))
-							.tree());
-				}else{
-					thisComponent.connection.send($pres()
-							.cnode(Strophe.xmlElement('show','',$.xmppIM.PresenceMode[mode])).up()
-							.cnode(Strophe.xmlElement('priority','',priority)).up()
-							.cnode(Strophe.xmlElement('status','',setting.presence[mode]))
-							.tree());
-				}
-				$('#xmppIM_updatePresence > span:eq(0)').text(status);
 			},
 			/**
 			 * 初始化搜索栏
@@ -403,7 +377,7 @@
 						response(result);
 					},					
 					select: function(event, ui) {
-						var presence = rosterManager.getPresence(ui.item.jid);//不带资源的jid
+						var presence = presenceManager.getPresence(ui.item.jid);//不带资源的jid
 						if(presence && presence.count > 0){
 							var target, priority = '';
 							$.each(presence, function(res, p){
@@ -443,7 +417,7 @@
 					var jid = $this.attr('jid');
 					thisComponent.discoverItems[jid] = obj;
 					var queryInfo = $iq({type: 'get', to: jid}).c('query', {xmlns: Strophe.NS.DISCO_INFO});
-					thisComponent.connection.sendIQ(queryInfo, function(iq){
+					connection.sendIQ(queryInfo, function(iq){
 						thisComponent.discoverItems[jid].info = $(iq);
 						//检查是否搜索用户的服务
 						if($(iq).find('feature[var="'+Strophe.NS.SEARCH_USER+'"]').length > 0){
@@ -458,232 +432,80 @@
 						}
 					});
 				});
-			},
+			}
+		};
+	};
+	
+	$.xmppIM.manager = (function(){
+		var searchUserDialog = null;
+		var rosterManager = null;
+		var presenceManager = null;
+		var chatManager = null;
+		var param = {};
+		return {
 			/**
-			 * 处理presence
+			 * 初始化，必须执行该方法初始化
 			 */
-			onPresence : function(p){
-				var $p = $(p);
-				var presence = {type:'', status:'', priority:'', mode:'', language:''};
-				presence.type = $p.attr('type');
-				if(presence.type == undefined || presence.type==''){
-					presence.type = $.xmppIM.PresenceType.available;
+			init : function(pSetting, pContainer, pConnection){
+				param['setting'] = pSetting;
+				param['container'] = pContainer;
+				param['connection'] = pConnection;
+			},
+			getRosterManager : function(){
+				if(rosterManager == null){
+					rosterManager = RosterManager(param);
 				}
-				var from = $p.attr('from');
-				var resource = Strophe.getResourceFromJid(from);
-				var address = Strophe.getBareJidFromJid(from);
-//				if(!thisComponent.roster.entries[address]){
-//					return;//忽略不在联系人中的jid
-//				}
-				resource == '' ? 'empty' : resource;
-				if(presence.type == $.xmppIM.PresenceType.available){//上线
-					//解析presence
-					var status = $p.children('status');
-					presence.status = status.length > 0 ? status.text() : '';
-					var priority = $p.children('priority');
-					presence.priority = priority.length > 0 ? priority.text() : '';
-					var mode = $p.children('show');
-					presence.mode = mode.length > 0 ? mode.text() : $.xmppIM.PresenceMode.available;
-					var language = $p.attr('xml:lang');
-					presence.language = language ? language : '';
-					//按资源存放
-//					if(!thisComponent.roster.presence[address]){
-//						thisComponent.roster.presence[address] = {};
-//					}
-//					thisComponent.roster.presence[address][resource] = presence;
-//					if(!thisComponent.roster.presence[address].count){
-//						thisComponent.roster.presence[address].count = 0;
-//					}
-					rosterManager.setPresence(address, resource, presence);
-					//更新联系人列表
-					var $newItem = $('#'+$.xmppIM.util.escapeAddress(from));
-					if($('#'+$.xmppIM.util.escapeAddress(from)).length == 0){//如果该jid的li不存在才创建
-						rosterManager.getPresence(address).count ++;
-						var groups = rosterManager.getUserGroups(address);//thisComponent.roster.entries[address].groups;
-						$.each(groups, function(i, groupName){
-							var groupId = rosterManager.getGroupId(groupName);
-							var $oldItem = $('#'+$.xmppIM.util.escapeAddress(address), $('#'+$.xmppIM.util.escapeAddress(groupId)));
-							console.log($oldItem.length, groupId, address);
-							//复制一个
-							$newItem = $oldItem.clone(true).addClass('online').attr('id', from)
-											.attr('res', resource).prependTo($oldItem.parent()).attr('resmark',false).show();							
-							$oldItem.hide();
-						});
-					}
-					$newItem.children('span').text(rosterManager.getUserStatusText(presence));
-					if(rosterManager.getPresence(address).count > 1){
-						//resmark属性标识是否添加了资源提示
-						$('li[id^="'+address+'"][resmark="false"] > a').text(function(index, text){
-							$(this).parent().attr('resmark',true);
-							return text + ' - ' + $(this).parent().attr('res');
-						});
-					}
-				}else if(presence.type == $.xmppIM.PresenceType.unavailable){//离线
-					//delete thisComponent.roster.presence[address][resource];
-					rosterManager.removePresence(address, resource);
-					//rosterManager.getPresence(address).count--;
-					$('#'+$.xmppIM.util.escapeAddress(from)+'[res="'+resource+'"]').remove();
-					if(rosterManager.getPresence(address).count == 0){
-						//全部资源都已离线
-						$('#'+$.xmppIM.util.escapeAddress(address)).show();
-					}else if(rosterManager.getPresence(address).count == 1){
-						//删除所有资源提示
-						$('li[id^="'+address+'"][resmark="true"] > a').text(function(index, text){
-							$(this).parent().attr('resmark',false);
-							return text.substring(0, text.indexOf('-'));
-						});
-					}
-				}else if(presence.type == $.xmppIM.PresenceType.subscribe){//添加好友的请求
-					var entry = rosterManager.getEntry(address);
-					//如果已加对方为好友，则自动同意对方的请求
-					if(entry){
-						if(entry.type == $.xmppIM.RosterItemType.to){
-							thisComponent.applySubscribe(from);
-						}
-					}else{
-						$('#xmppIM_confirmSubscribe').dialog({
-							
-						});
-					}
+				return rosterManager;
+			},
+			getSearchUserDialog:function(){
+				if(searchUserDialog == null){
+					searchUserDialog = SearchUserDialog(param);
 				}
-				return true;
+				return searchUserDialog;
 			},
-			/**
-			 * 发送同意加好友请求的presence
-			 */
-			applySubscribe : function(jid){
-				var pres = $pres({to:jid, type:$.xmppIM.PresenceType.subscribed});
-				thisComponent.connection.send(pres.tree());
-			},			
-			/**
-			 * 处理联系人列表
-			 * <iq xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" type="result" id="sd113" to="small@viking/潘迪安">
-			 * 	<query xmlns="jabber:iq:roster">
-			 * 		<item jid="abc@viking" subscription="both"/>
-			 * 		<item jid="cody@viking" subscription="both"><group>我的好友</group></item>
-			 * 		<item jid="admin@viking-pc" subscription="both"/>
-			 * 		<item jid="lxp@viking" subscription="both"><group>我的好友</group></item>
-			 * </query></iq>
-			 */
-			onJabberRoster : function(iq){
-				var newRosters = [];
-				$(iq).find('item').each(function(){
-					var $this = $(this);
-					var item = {jid:'', nickName:'', type:'', status:'', groups:[]};
-					item.jid = $this.attr('jid');
-					item.nickName = $this.attr('name') ? $this.attr('name') : item.jid;
-					item.type = $this.attr('subscription');
-					item.status = $this.attr('ask');
-					//保存分组
-					//var group = thisComponent.roster.groups[item.jid] ? thisComponent.roster.groups[item.jid] : {};
-					var $group = $this.children('group');
-					if($group.length > 0){
-						$group.each(function(){
-							var groupName = $(this).text();
-							rosterManager.addGroup(groupName, item);
-						});
-					}else{
-						//如果没有分组则放到默认分组里
-						rosterManager.addGroup(setting.defaultGroupName, item);
-					}
-					rosterManager.addEntry(item.jid, item);
-					newRosters.push(item);
-				});
-				thisComponent.createRosterTree(newRosters);
-				return true;
-			},			
-			/**
-			 * 根据分组名获取分组的id
-			 */
-			getGroupId : function(groupName){
-				return (groupName == setting.defaultGroupName) ? setting.defaultGroupId : groupName;
-			},
-			/**
-			 * 创建联系人列表
-			 */
-			createRosterTree : function(entries){
-				var groupTemplate = $('#'+setting.defaultGroupId).clone();//先复制一个用作模板
-				console.log(entries);
-				$.each(entries, function(i, item){				
-					//在联系人列表中删除联系人
-					if(item.type == $.xmppIM.RosterItemType.remove){
-						//$.xmppIM.util.showMessage(item.nickName'')
-						//delete thisComponent.roster.presence[item.jid];
-						rosterManager.removePresence(item.jid);
-//						$.each(rosterManager.getEntry(item.jid).groups, function(i, name){
-//							delete thisComponent.roster.groups[name][item.jid];
-//						});
-//						delete thisComponent.roster.entries[item.jid];
-						rosterManager.removeEntry(item.jid);
-						$('li[id^="'+$.xmppIM.util.escapeAddress(item.jid)+'"]').remove();
-					}else{
-						//创建group
-						$.each(item.groups, function(i, name){
-							var groupId = thisComponent.getGroupId(name);
-							var $group = $('#'+groupId);
-							if($group.length == 0 && name != setting.defaultGroupName){//检查是否已建了该分组
-								$group = groupTemplate.clone().attr('id', name)
-									.prependTo('#xmppIM_contactList')
-									.find('span[type="xmppIM_contactGroup_Header"] > a')
-									.text(name).end();
-							}
-							var targetGroup = $group.find('ul:eq(0)');
-							//创建联系人
-							thisComponent.createContactItem(targetGroup, item);
-							
-						});//end each
-					}
-				});
-				//初始化时设置事件
-				if(!thisComponent.hasInit){
-					//设置分组头点击事件
-					$('#xmppIM_contactList').find('span[type="xmppIM_contactGroup_Header"]').live('click',function(){
-						$(this).siblings('ul').toggle();
-						if($(this).children('b').hasClass('ui-icon-triangle-1-e')){
-							$(this).children('b').removeClass('ui-icon-triangle-1-e').addClass('ui-icon-triangle-1-se');
-						}else{
-							$(this).children('b').removeClass('ui-icon-triangle-1-se').addClass('ui-icon-triangle-1-e');
-						}
-					});
-					//设置用户双击事件
-					$('#xmppIM_contactList').find('li.user').live('click',function(){					
-						thisComponent.createOne2OneChat(this.id);
-					}).live('mouseover', function(){
-						if(!$(this).hasClass('ui-state-highlight')){
-							$(this).addClass('ui-state-highlight ui-corner-all');
-						}
-					}).live('mouseout', function(){
-						$(this).removeClass('ui-state-highlight ui-corner-all');
-					});					
-					thisComponent.hasInit = true;
+			getPresenceManager : function(){
+				if(presenceManager == null){
+					presenceManager = PresenceManager(param);
 				}
+				return presenceManager;
 			},
-			/**
-			 * 创建一个联系人列表里一个item
-			 */
-			createContactItem : function($group, item){
-				var $item = $group.find('#'+item.jid.replace(/@/, '\\@'));
-				if($item.length > 0){//如果列表上已有该联系人
-					$item.children('a').text(item.nickName);
-				}else{
-					$('<li/>').attr('id', item.jid).addClass('user').append($('<b/>').addClass('ui-icon ui-icon-comment'))
-						.append($('<a/>').text(item.nickName)).append($('<span/>')).appendTo($group);
+			getChatManager : function(){
+				if(chatManager == null){
+					chatManager = ChatManager(param);
 				}
-			},
+				return chatManager;
+			}
+		};
+	})();
+	
+	/**
+	 * 聊天管理器
+	 */
+	function ChatManager(param){
+		if(!param){
+			throw 'ChatManager：缺少参数param';
+		}
+		var chatRoomDlgList = {};//保存全部聊天对话框
+		var setting = param['setting'];
+		var rosterManager = $.xmppIM.manager.getRosterManager();
+		var connection = param['connection'];
+		
+		//返回ChatManager对象
+		var chatManager = {
 			/**
 			 * 创建一对一的聊天对话，
 			 * 返回新建的对话框(jQuery)对象
 			 */
 			createOne2OneChat : function(jid){
 				//生成聊天对话框
-				if(thisComponent.chatRoomDlgList[jid]){
-					thisComponent.chatRoomDlgList[jid].dialog('open').dialog( "moveToTop" );
+				if(chatRoomDlgList[jid]){
+					chatRoomDlgList[jid].dialog('open').dialog( "moveToTop" );
 				}else{
-					var nickName = thisComponent.getNickName(jid);
+					var nickName = rosterManager.getNickName(jid);
 					var $chatRoomDlg = $('#xmppIM_chatDialog').clone(true).attr('id', 'xmppIM_chatDialog_'+jid).appendTo($('#xmppIM_chatDialog'));
 					$('#xmppIM_targetJID', $chatRoomDlg).val(jid);
 					$chatRoomDlg.find('div.userName').text(nickName);
-					thisComponent.chatRoomDlgList[jid] = $chatRoomDlg;
+					chatRoomDlgList[jid] = $chatRoomDlg;
 					$chatRoomDlg.dialog({
 						height : 340,
 						width : 420,
@@ -691,8 +513,8 @@
 						resizable: false
 					});
 				}
-				return thisComponent.chatRoomDlgList[jid];
-			},		
+				return chatRoomDlgList[jid];
+			},
 			/**
 			 * 发送短消息
 			 */
@@ -706,8 +528,8 @@
 					var msg = $msg({type:'chat', from:setting.userId, to:targetJID})
 						.cnode(Strophe.xmlElement('body','',content));
 					var nickName = setting.userId;
-					thisComponent.connection.send(msg.tree());
-					thisComponent.insertChatLog($dlg, nickName, new Date(), content, 'itemHeaderTo');
+					connection.send(msg.tree());
+					this.insertChatLog($dlg, nickName, new Date(), content, 'itemHeaderTo');
 				}
 			},
 			/**
@@ -717,10 +539,10 @@
 				var $msg = $(msg);
 				var from = $msg.attr('from');
 				var content = $msg.children('body').length > 0 ? $msg.children('body').text() : '';
-				var $dlg = thisComponent.createOne2OneChat(from);
+				var $dlg = createOne2OneChat(from);
 				var $chatLog = $dlg.find('div[type="template"]').clone().removeAttr('type');
-				var nickName = thisComponent.getNickName(from);
-				thisComponent.insertChatLog($dlg, nickName, new Date(), content, 'itemHeaderFrom');
+				var nickName = rosterManager.getNickName(from);
+				this.insertChatLog($dlg, nickName, new Date(), content, 'itemHeaderFrom');
 				return true;
 			},
 			/**
@@ -735,54 +557,197 @@
 				$chatLog.appendTo($dlg.find('div.chatLog')).show();
 			}
 		};
+		//初始化
+		connection.addHandler(chatManager.onMessage, null, 'message', 'chat', null, null);
+		return chatManager;
 	};
 	
-	$.xmppIM.manager = (function(){
-		var searchUserDialog = null;
-		var rosterManager = null;
-		var setting, container, connection;
-		return {
+	/**
+	 * 在线状态管理器
+	 */
+	function PresenceManager(param){
+		//presence:{jid:{count,resource:{type, status, priority, mode, language},...}}
+		var presence = {};
+		var setting = param['setting'];
+		var rosterManager = $.xmppIM.manager.getRosterManager();
+		var connection = param['connection'];
+		//定义public方法
+		var presenceManager = {
 			/**
-			 * 初始化，必须执行该方法初始化
+			 * 获取指定jid的所有presence或某一个资源的presence，第二个参数可选
 			 */
-			init : function(pSetting, pContainer, pConnection){
-				setting = pSetting;
-				container = pContainer;
-				connection = pConnection;
+			getPresence : function(jid, res){
+				var barejid = Strophe.getBareJidFromJid(jid);
+				return res ? roster.presence[barejid][res] : roster.presence[barejid];
 			},
-			getRosterManager : function(){
-				if(rosterManager == null){
-					rosterManager = RosterManager(setting);
+			/**
+			 * 更新一个presence
+			 */
+			setPresence : function(jid, res, pres){
+				var barejid = Strophe.getBareJidFromJid(jid);
+				if(!presence[barejid]){
+					presence[barejid] = {count:0};
 				}
-				return rosterManager;
+				presence[barejid][res] = pres;
+				if(!presence[barejid].count){
+					presence[barejid].count = 0;
+				}
 			},
-			getSearchUserDialog:function(){
-				if(searchUserDialog == null){
-					searchUserDialog = SearchUserDialog(container, connection, this.getRosterManager(), setting);
+			/**
+			 * 删除presence，第二个参数可选，如果指定了资源则只删除该资源的res
+			 */
+			removePresence : function(jid, res){
+				var barejid = Strophe.getBareJidFromJid(jid);
+				if(res){
+					delete presence[barejid][res];
+					presence[barejid].count --;
+				}else{
+					delete presence[barejid];
 				}
-				return searchUserDialog;
+			},
+			/**
+			 * 发送presence包，更新当前用户的在线状态
+			 */
+			sendPresence : function(mode, priority){
+				var status = setting.presence[mode];
+				if(mode == $.xmppIM.PresenceMode.available){
+					connection.send($pres()
+							.cnode(Strophe.xmlElement('status','',setting.presence[mode])).up()
+							.cnode(Strophe.xmlElement('priority','',priority))
+							.tree());
+				}else{
+					connection.send($pres()
+							.cnode(Strophe.xmlElement('show','',$.xmppIM.PresenceMode[mode])).up()
+							.cnode(Strophe.xmlElement('priority','',priority)).up()
+							.cnode(Strophe.xmlElement('status','',setting.presence[mode]))
+							.tree());
+				}
+				$('#xmppIM_updatePresence > span:eq(0)').text(status);
+			},
+			/**
+			 * 发送同意加好友请求的presence
+			 */
+			applySubscribe : function(tojid){
+				var pres = $pres({to:tojid, type:$.xmppIM.PresenceType.subscribed});
+				connection.send(pres.tree());
 			}
 		};
-	})();
+		//定义private方法
+		/**
+		 * 处理presence
+		 */
+		var onPresence = function(p){
+			var $p = $(p);
+			var presence = {type:'', status:'', priority:'', mode:'', language:''};
+			presence.type = $p.attr('type');
+			if(presence.type == undefined || presence.type==''){
+				presence.type = $.xmppIM.PresenceType.available;
+			}
+			var from = $p.attr('from');
+			var resource = Strophe.getResourceFromJid(from);
+			var address = Strophe.getBareJidFromJid(from);
+//			if(!thisComponent.roster.entries[address]){
+//				return;//忽略不在联系人中的jid
+//			}
+			resource == '' ? 'empty' : resource;
+			if(presence.type == $.xmppIM.PresenceType.available){//上线
+				//解析presence
+				var status = $p.children('status');
+				presence.status = status.length > 0 ? status.text() : '';
+				var priority = $p.children('priority');
+				presence.priority = priority.length > 0 ? priority.text() : '';
+				var mode = $p.children('show');
+				presence.mode = mode.length > 0 ? mode.text() : $.xmppIM.PresenceMode.available;
+				var language = $p.attr('xml:lang');
+				presence.language = language ? language : '';
+				//按资源存放
+//				if(!thisComponent.roster.presence[address]){
+//					thisComponent.roster.presence[address] = {};
+//				}
+//				thisComponent.roster.presence[address][resource] = presence;
+//				if(!thisComponent.roster.presence[address].count){
+//					thisComponent.roster.presence[address].count = 0;
+//				}
+				presenceManager.setPresence(address, resource, presence);
+				//更新联系人列表
+				var $newItem = $('#'+$.xmppIM.util.escapeAddress(from));
+				if($('#'+$.xmppIM.util.escapeAddress(from)).length == 0){//如果该jid的li不存在才创建
+					//TODO cout++应该放进setPresence中
+					presenceManager.getPresence(address).count ++;//这需要改
+					var groups = rosterManager.getUserGroups(address);//thisComponent.roster.entries[address].groups;
+					$.each(groups, function(i, groupName){
+						var groupId = rosterManager.getGroupId(groupName);
+						var $oldItem = $('#'+$.xmppIM.util.escapeAddress(address), $('#'+$.xmppIM.util.escapeAddress(groupId)));
+						console.log($oldItem.length, groupId, address);
+						//复制一个
+						$newItem = $oldItem.clone(true).addClass('online').attr('id', from)
+										.attr('res', resource).prependTo($oldItem.parent()).attr('resmark',false).show();							
+						$oldItem.hide();
+					});
+				}
+				$newItem.children('span').text(rosterManager.getUserStatusText(presence));
+				if(presenceManager.getPresence(address).count > 1){
+					//resmark属性标识是否添加了资源提示
+					$('li[id^="'+address+'"][resmark="false"] > a').text(function(index, text){
+						$(this).parent().attr('resmark',true);
+						return text + ' - ' + $(this).parent().attr('res');
+					});
+				}
+			}else if(presence.type == $.xmppIM.PresenceType.unavailable){//离线
+				//delete thisComponent.roster.presence[address][resource];
+				presenceManager.removePresence(address, resource);
+				//rosterManager.getPresence(address).count--;
+				$('#'+$.xmppIM.util.escapeAddress(from)+'[res="'+resource+'"]').remove();
+				if(presenceManager.getPresence(address).count == 0){
+					//全部资源都已离线
+					$('#'+$.xmppIM.util.escapeAddress(address)).show();
+				}else if(presenceManager.getPresence(address).count == 1){
+					//删除所有资源提示
+					$('li[id^="'+address+'"][resmark="true"] > a').text(function(index, text){
+						$(this).parent().attr('resmark',false);
+						return text.substring(0, text.indexOf('-'));
+					});
+				}
+			}else if(presence.type == $.xmppIM.PresenceType.subscribe){//添加好友的请求
+				var entry = rosterManager.getEntry(address);
+				//如果已加对方为好友，则自动同意对方的请求
+				if(entry){
+					if(entry.type == $.xmppIM.RosterItemType.to){
+						presenceManager.applySubscribe(from);
+					}
+				}else{
+					$('#xmppIM_confirmSubscribe').dialog({
+						
+					});
+				}
+			}
+			return true;
+		};		
+		//初始化
+		connection.addHandler(onPresence, null, 'presence', null, null, null);
+		return presenceManager;
+	};
 	
 	/**
 	 * 管理联系人信息
 	 */
-	function RosterManager(pSetting){
-		if(!pSetting){
-			throw 'RosterManager：初始化缺少参数pSetting';
+	function RosterManager(param){
+		if(!param){
+			throw 'RosterManager：缺少参数pSetting';
 		}
-		var rosterManager = null;
-		var setting = pSetting;
+		var setting = param['setting'];
+		var connection = param['connection'];
+		var presenceManager = $.xmppIM.manager.getPresenceManager();
+		var chatManager = $.xmppIM.manager.getChatManager();
 		/**
 		 * {
-				presence:{jid:{count,resource:{type, status, priority, mode, language},...}},
 				groups:{goupsName:{jid:{entriy},jid:{entriy},...},
 				entries:{jid:{jid, nickName, type, status, groups:[name,name,...]}}
 			}
 		 */
-		var roster = {presence:{}, groups:{}, entries:{}}; //保存用户的联系人列表，还包括分组列表和在线状态		
-		return {
+		var roster = {groups:{}, entries:{}}; //保存用户的联系人列表，还包括分组列表和在线状态	
+		var hasInit = false;
+		var rosterManager = {
 			makeJID : function(userId, noRes){
 				if(noRes){
 					return userId + "@" + setting.domain;
@@ -837,35 +802,6 @@
 				delete roster.entries[jid];
 			},
 			/**
-			 * 获取指定jid的所有presence或某一个资源的presence，第二个参数可选
-			 */
-			getPresence : function(jid, res){
-				return res ? roster.groups[jid][res] : roster.groups[jid];
-			},
-			/**
-			 * 更新一个presence
-			 */
-			setPresence : function(jid, res, presence){
-				if(!roster.presence[address]){
-					roster.presence[address] = {count:0};
-				}
-				roster.presence[address][res] = presence;
-				if(!roster.presence[address].count){
-					roster.presence[address].count = 0;
-				}
-			},
-			/**
-			 * 删除presence，第二个参数可选，如果指定了资源则只删除该资源的res
-			 */
-			removePresence : function(jid, res){
-				if(res){
-					delete roster.presence[jid][res];
-					roster.presence[jid].count --;
-				}else{
-					delete roster.presence[jid];
-				}
-			},
-			/**
 			 * 增加或修改一个group
 			 */
 			addGroup : function(groupName, entry){
@@ -905,16 +841,130 @@
 				return presence.status == '' ? setting.presence[presence.mode] : presence.status;
 			}
 		};
+		/**
+		 * private
+		 * 处理联系人列表
+		 * <iq xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" type="result" id="sd113" to="small@viking/潘迪安">
+		 * 	<query xmlns="jabber:iq:roster">
+		 * 		<item jid="abc@viking" subscription="both"/>
+		 * 		<item jid="cody@viking" subscription="both"><group>我的好友</group></item>
+		 * 		<item jid="admin@viking-pc" subscription="both"/>
+		 * 		<item jid="lxp@viking" subscription="both"><group>我的好友</group></item>
+		 * </query></iq>
+		 */
+		var onJabberRoster = function(iq){
+			var newRosters = [];
+			$(iq).find('item').each(function(){
+				var $this = $(this);
+				var item = {jid:'', nickName:'', type:'', status:'', groups:[]};
+				item.jid = $this.attr('jid');
+				item.nickName = $this.attr('name') ? $this.attr('name') : item.jid;
+				item.type = $this.attr('subscription');
+				item.status = $this.attr('ask');
+				//保存分组
+				//var group = thisComponent.roster.groups[item.jid] ? thisComponent.roster.groups[item.jid] : {};
+				var $group = $this.children('group');
+				if($group.length > 0){
+					$group.each(function(){
+						var groupName = $(this).text();
+						rosterManager.addGroup(groupName, item);
+					});
+				}else{
+					//如果没有分组则放到默认分组里
+					rosterManager.addGroup(setting.defaultGroupName, item);
+				}
+				rosterManager.addEntry(item.jid, item);
+				newRosters.push(item);
+			});
+			createRosterTree(newRosters);
+			return true;
+		};
+		/**
+		 * private
+		 * 创建联系人列表
+		 */
+		var createRosterTree = function(entries){
+			var groupTemplate = $('#'+setting.defaultGroupId).clone();//先复制一个用作模板
+			console.log(entries);
+			$.each(entries, function(i, item){				
+				//在联系人列表中删除联系人
+				if(item.type == $.xmppIM.RosterItemType.remove){
+					//$.xmppIM.util.showMessage(item.nickName'')
+					//delete thisComponent.roster.presence[item.jid];
+					presenceManager.removePresence(item.jid);
+//					$.each(rosterManager.getEntry(item.jid).groups, function(i, name){
+//						delete thisComponent.roster.groups[name][item.jid];
+//					});
+//					delete thisComponent.roster.entries[item.jid];
+					rosterManager.removeEntry(item.jid);
+					$('li[id^="'+$.xmppIM.util.escapeAddress(item.jid)+'"]').remove();
+				}else{
+					//创建group
+					$.each(item.groups, function(i, name){
+						var groupId = rosterManager.getGroupId(name);
+						var $group = $('#'+groupId);
+						if($group.length == 0 && name != setting.defaultGroupName){//检查是否已建了该分组
+							$group = groupTemplate.clone().attr('id', name)
+								.prependTo('#xmppIM_contactList')
+								.find('span[type="xmppIM_contactGroup_Header"] > a')
+								.text(name).end();
+						}
+						var targetGroup = $group.find('ul:eq(0)');
+						//创建联系人
+						createContactItem(targetGroup, item);
+						
+					});//end each
+				}
+			});
+			//初始化时设置事件
+			if(!hasInit){
+				//设置分组头点击事件
+				$('#xmppIM_contactList').find('span[type="xmppIM_contactGroup_Header"]').live('click',function(){
+					$(this).siblings('ul').toggle();
+					if($(this).children('b').hasClass('ui-icon-triangle-1-e')){
+						$(this).children('b').removeClass('ui-icon-triangle-1-e').addClass('ui-icon-triangle-1-se');
+					}else{
+						$(this).children('b').removeClass('ui-icon-triangle-1-se').addClass('ui-icon-triangle-1-e');
+					}
+				});
+				//设置用户双击事件
+				$('#xmppIM_contactList').find('li.user').live('click',function(){					
+					chatManager.createOne2OneChat(this.id);
+				}).live('mouseover', function(){
+					if(!$(this).hasClass('ui-state-highlight')){
+						$(this).addClass('ui-state-highlight ui-corner-all');
+					}
+				}).live('mouseout', function(){
+					$(this).removeClass('ui-state-highlight ui-corner-all');
+				});
+				hasInit = true;
+			}
+		};
+		/**
+		 * private
+		 * 创建一个联系人列表里一个item
+		 */
+		var createContactItem = function($group, item){
+			var $item = $group.find('#'+item.jid.replace(/@/, '\\@'));
+			if($item.length > 0){//如果列表上已有该联系人
+				$item.children('a').text(item.nickName);
+			}else{
+				$('<li/>').attr('id', item.jid).addClass('user').append($('<b/>').addClass('ui-icon ui-icon-comment'))
+					.append($('<a/>').text(item.nickName)).append($('<span/>')).appendTo($group);
+			}
+		};
+		connection.addHandler(onJabberRoster, Strophe.NS.ROSTER, 'iq', null, null, null);
+		return rosterManager;
 	};
 	
 	/**
 	 * 类，搜索并添加好友的对话框
 	 */
-	function SearchUserDialog(container, connection, rosterManager, setting){
-//		this.container = container;
-//		this.connection = connection;
-//		this.rosterManager = rosterManager;
-//		this.setting = setting;
+	function SearchUserDialog(param){
+		var container = param['container'];
+		var setting = param['setting'];
+		var rosterManager = $.xmppIM.manager.getRosterManager();
+		var connection = param['connection'];
 		hasInit = false;//是否已初始化
 		var loadHtml = function(){
 			if(!hasInit){
@@ -1127,6 +1177,7 @@
 				connection.send(p.tree());
 			});
 		};
+		//加载html并初始化
 		this.loadHtml();
 		return {
 			/**
