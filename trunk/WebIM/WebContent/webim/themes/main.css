@@ -78,6 +78,7 @@
 .xmppIM_toolBar .toolBar div{
 	float:right;
 	margin-left:6px;
+	cursor:pointer;
 }
 
 #xmppIM_contactList {
