@@ -317,7 +317,6 @@
 			getDiscoverService : function(){
 				if(discoverService == null){
 					discoverService = DiscoverService(param);
-					discoverService.init();
 				}
 				return discoverService;
 			}
