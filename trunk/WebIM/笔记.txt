@@ -1,3 +1,5 @@
+http://gbtan.javaeye.com/blog/654584
+
 {
 	presence:{jid:{type, status, priority, mode, language}},
 	groups:{goupsName:{jid:{entriy},jid:{entriy},...},
