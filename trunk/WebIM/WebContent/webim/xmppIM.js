@@ -593,11 +593,6 @@
 							var service = {'jid':jid, 'name':$this.attr('name')};
 							userSearchService.push(service);
 							fireUserSearchListener(service);
-							//初始化搜索服务的下拉
-//							$('<option/>', {
-//								value:jid,
-//								text:$this.attr('name')
-//							}).appendTo($('#xmppIM_searchService'));
 						});
 					}
 				});
@@ -1125,6 +1120,26 @@
 				$.each(rosterListener, function(i, n){
 					n.func.call(n.obj, rosters);
 				});
+			},
+			/**
+			 * 生成联系人分组下拉选项
+			 */
+			createGroupSelect : function($select){
+				var _this = this;
+				$select.each(function(){
+					var $this = $(this);
+					$this.empty();
+					$('<option/>', {
+						value: name,
+						text : '--请选择--'
+					}).appendTo($this);
+					$.each(_this.getAllGroups(), function(name, list){
+						$('<option/>', {
+							value: name,
+							text : name
+						}).appendTo($this);
+					});
+				});
 			}
 		};
 		/**
@@ -1172,7 +1187,7 @@
 	
 	/************************************************************************************************/
 	/**
-	 * 类，搜索并添加好友的对话框
+	 * 搜索并添加好友的对话框
 	 */
 	function SearchUserDialog(param){
 		var container = param['container'];
@@ -1213,9 +1228,9 @@
 			});				
 			//上一步
 			$('#xmppIM_searchButton_preScreen').click(function(){
-				$(this).hide();
-				$('#xmppIM_searchPanel').add('#xmppIM_searchButton_Search').show();
-				$('#xmppIM_searchPanel').find('input[type="text"]').val('');
+				showAddUserBtn('xmppIM_searchButton_Search');
+				$('#xmppIM_searchPanel').show().find('input[type="text"]').val('');
+				$('#xmppIM_searchDetail_result').hide();
 			});
 			//继续添加好友
 			$('#xmppIM_searchButton_Continue').click(function(){
@@ -1314,9 +1329,52 @@
 			var iq = $('#'+$.xmppIM.util.escapeAddress(val)).data('dataForm').toSubmitIQ();
 			connection.sendIQ(iq, function(result){
 				console.log('搜索结果', result);
+				showSearchResult(result);
 			}, function(result){
 				console.log('搜索出错', result);
 			});
+		};
+		/**
+		 * 显示按条件搜索的结果
+		 */
+		var showSearchResult = function(resultIQ){
+			$('#xmppIM_searchDetail_result').empty();
+			var $result = $(resultIQ);
+			var $table = $('<table/>',{
+				'class':'ui-widget-content ui-corner-all'
+			}).appendTo('#xmppIM_searchDetail_result');
+			var $header = $('<tr/>', {
+				'class' : 'ui-accordion-header ui-state-default'
+			}).appendTo($table);
+			var field = [];
+			//生成表头
+			$result.find('reported > field').each(function(){
+				var $this = $(this);
+				$('<th/>',{
+					id : $this.attr('var'),
+					text : $this.attr('label')
+				}).appendTo($header);
+				field.push($this.attr('var'));
+			});
+			//先生成一个模板
+			var $tr = $('<tr/>');
+			$.each(field, function(n, f){
+				$('<td/>',{
+					'var' : f
+				}).appendTo($tr);
+			});
+			//生成结果
+			$result.find('item').each(function(i){
+				var $newTr = $tr.clone(true).appendTo($table);
+				$(this).children('field').each(function(){
+					var $this = $(this);
+					var txt = $this.text();
+					$newTr.children('td[var="'+$this.attr('var')+'"]').attr('title', txt).text(txt);
+				});
+			});
+			$('#xmppIM_searchPanel').hide();
+			$('#xmppIM_searchDetail_result').show();
+			showAddUserBtn('xmppIM_searchButton_preScreen');
 		};
 		/**
 		 * 直接通过帐号添加好友
@@ -1418,25 +1476,6 @@
 			 */
 			showDialog : function(){
 				$('#xmppIM_addContact_Dialog').dialog('open');
-			},
-			/**
-			 * 生成联系人分组下拉选项
-			 */
-			createGroupSelect : function($select){
-				$select.each(function(){
-					var $this = $(this);
-					$this.empty();
-					$('<option/>', {
-						value: name,
-						text : '--请选择--'
-					}).appendTo($this);
-					$.each(rosterManater.getAllGroups(), function(name, list){
-						$('<option/>', {
-							value: name,
-							text : name
-						}).appendTo($this);
-					});
-				});
 			}
 		};
 	};	

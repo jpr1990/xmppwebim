@@ -244,3 +244,18 @@
 .xmppIM_searchForm{
 	margin:10px 0px 0px 2em;
 }
+
+#xmppIM_searchDetail_result {
+	overflow-x : hidden;
+}
+
+#xmppIM_searchDetail_result table{
+	width:100%;
+	table-layout:fixed;
+}
+
+#xmppIM_searchDetail_result td{
+	overflow-x : hidden;
+	text-overflow:ellipsis;
+	cursor: pointer;
+}
