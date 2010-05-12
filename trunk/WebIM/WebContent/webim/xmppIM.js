@@ -654,9 +654,6 @@
 	 * 聊天管理器
 	 */
 	function ChatManager(param){
-		if(!param){
-			throw 'ChatManager：缺少参数param';
-		}
 		var chatRoomDlgList = {};//保存全部聊天对话框
 		var setting = param['setting'];
 		var imManager = $.xmppIM.manager;
@@ -1203,13 +1200,13 @@
 					$('#xmppIM_searchJID').show();
 					$('#xmppIM_searchDetail').hide();
 					showAddUserBtn('xmppIM_searchButton_Search');
-					$('#xmppIM_searchJID_error').hide();
 				}else{//查找
 					$('#xmppIM_searchJID').hide();
 					$('#xmppIM_searchDetail').show();
 					$('#xmppIM_searchService').change();
 				}
 				showAddUserBtn('xmppIM_searchButton_Search');
+				showSearchMessage();
 			});
 		};
 		var initButtonEvent = function(){
@@ -1294,10 +1291,10 @@
 			if(msg){
 				if(isError){
 					$('#xmppIM_searchJID_error').removeClass('ui-state-highlight')
-						.addClass('ui-state-error').text(msg);
+						.addClass('ui-state-error').text(msg).show();
 				}else{
 					$('#xmppIM_searchJID_error').removeClass('ui-state-error')
-					.addClass('ui-state-highlight').text(msg);
+					.addClass('ui-state-highlight').text(msg).show();
 				}
 			}else{
 				$('#xmppIM_searchJID_error').hide();
@@ -1306,7 +1303,15 @@
 		/**
 		 * 打开添加好友的对话框
 		 */
-		var openAddContactDlg = function(){
+		var openAddContactDlg = function(jid, userId){
+			var userName = userId;
+			if(!userName){
+				userName = Strophe.getNodeFromJid(jid);
+			}
+			$('#xmppIM_searchJID_resultJID').text(jid);
+			$('#xmppIM_searchJID_resultNickname').val(userName);
+			imManager.getRosterManager().createGroupSelect($('#xmppIM_searchJID_resultGroup'));
+			$('#xmppIM_searchJID_resultInfo').html('<b>添加该用户到您的联系人名单</b>');
 			$('#xmppIM_searchJID_result').dialog({
 				width:310,
 				height:220,
@@ -1316,7 +1321,13 @@
 						$(this).dialog('close');
 					},
 					'添加好友'	: function(){
-						addContact();
+						var jid = $('#xmppIM_searchJID_resultJID').text();
+						var nickName = $.trim($('#xmppIM_searchJID_resultNickname').val());
+						var group = $('#xmppIM_searchJID_resultGroup').val();
+						$('#xmppIM_searchJID_addContact').hide();
+						$('#xmppIM_searchJID_resultInfo').html('已添加'+jid+'到您的联系人列表，请等待对方确认您的请求');
+						sendAddContactIQ(jid, nickName, group);
+						showAddUserBtn('xmppIM_searchButton_Continue');
 					}
 				}
 			});
@@ -1357,7 +1368,10 @@
 				field.push($this.attr('var'));
 			});
 			//先生成一个模板
-			var $tr = $('<tr/>');
+			var $tr = $('<tr/>').click(function(){
+				var jid = $(this).find('td[var="jid"]:eq(0)').text();
+				openAddContactDlg(jid);
+			});
 			$.each(field, function(n, f){
 				$('<td/>',{
 					'var' : f
@@ -1384,18 +1398,13 @@
 			if($.trim(userId) != ''){
 				var jid = imManager.getRosterManager().makeJID(userId, true);
 				if(imManager.getRosterManager().existEntry(jid)){
-					$('#xmppIM_searchJID_error').show().text('该用户已在您联系人列表中');
+					showSearchMessage('该用户已在您联系人列表中', true);//$('#xmppIM_searchJID_error').show().text('该用户已在您联系人列表中');
 				}else{
 					var queryIQ = $iq({type: 'get', from:setting.userId, to: jid}).c('query', {xmlns: Strophe.NS.DISCO_INFO});					
 					showSearchMessage('正在查询……');
 					connection.sendIQ(queryIQ.tree(), function(iq){
 						showSearchMessage();
-						openAddContactDlg();
-						$('#xmppIM_searchJID_resultJID').text(jid);
-						$('#xmppIM_searchJID_resultNickname').val(userId);
-						imManager.getRosterManager().createGroupSelect($('#xmppIM_searchJID_resultGroup'));
-						$('#xmppIM_searchJID_addContact').show();
-						$('#xmppIM_searchJID_resultInfo').html('<b>添加该用户到您的联系人名单</b>');
+						openAddContactDlg(jid);
 					}, function(iq){
 						showSearchMessage('找不到该用户',true);
 					});
@@ -1404,20 +1413,6 @@
 				//$('#xmppIM_searchJID_error').show().text('请输入帐号');
 				showSearchMessage('请输入帐号',true);
 			}
-		};
-		/**
-		 * 添加联系人，
-		 * jid	对方的jid
-		 * type	1直接输入用户名添加，2通过查找用户然后添加
-		 */
-		var addContact = function(){
-			var jid = $('#xmppIM_searchJID_resultJID').text();
-			var nickName = $.trim($('#xmppIM_searchJID_resultNickname').val());
-			var group = $('#xmppIM_searchJID_resultGroup').val();
-			$('#xmppIM_searchJID_addContact').hide();
-			$('#xmppIM_searchJID_resultInfo').html('已添加'+jid+'到您的联系人列表，请等待对方确认您的请求');
-			sendAddContactIQ(jid, nickName, group);
-			showAddUserBtn('xmppIM_searchButton_Continue');
 		};
 		/**
 		 * 发送添加好友请求的IQ
