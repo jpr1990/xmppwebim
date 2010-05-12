@@ -139,3 +139,92 @@ http://gbtan.javaeye.com/blog/654584
 	</query>
 </iq>
 <presence id="BDsk3-34" to="jjjjj@gyoa" type="subscribe"></presence>
+
+=========================================================================================================
+获取vcard
+ <iq type="get" id="sd31" to="admin@viking"><vCard xmlns="vcard-temp"/></iq>
+返回
+<iq xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" type="result" id="sd40" from="admin@viking" to="admin@viking/潘迪安">
+	<vCard xmlns="vcard-temp">
+		<FN/>
+		<N>
+			<GIVEN>名</GIVEN>
+			<FAMILY>姓</FAMILY>
+			<MIDDLE>中间名</MIDDLE>
+		</N>
+		<NICKNAME>昵称</NICKNAME>
+		<URL>网站</URL>
+		<BDAY>生日</BDAY>
+		<AGE>年龄</AGE>
+		<GENDER>性别</GENDER>
+		<MARITALSTATUS>婚姻</MARITALSTATUS>
+		<LOCATION/>
+		<WORKCELL>联系人-手机</WORKCELL>
+		<HOMECELL>手机</HOMECELL>
+		<ORG>
+			<ORGNAME>组织-名称</ORGNAME>
+			<ORGUNIT>组织-部门</ORGUNIT>
+		</ORG>
+		<TITLE>组织-职称</TITLE>
+		<ROLE>组织-职务</ROLE>
+		<TEL>
+			<HOME/>
+			<VOICE/>
+			<NUMBER>电话</NUMBER>
+		</TEL>
+		<TEL>
+			<HOME/>
+			<FAX/>
+			<NUMBER>传真</NUMBER>
+		</TEL>
+		<TEL>
+			<HOME/>
+			<MSG/>
+			<NUMBER/>
+		</TEL>
+		<ADR>
+			<HOME/>
+			<EXTADD>地址2</EXTADD>
+			<STREET>地址1</STREET>
+			<LOCALITY>城市</LOCALITY>
+			<REGION>州（省）</REGION>
+			<PCODE>邮编</PCODE>
+			<COUNTRY>CN</COUNTRY>
+		</ADR>
+		<TEL>
+			<WORK/>
+			<VOICE/>
+			<NUMBER>联系人-电话</NUMBER>
+		</TEL>
+		<TEL>
+			<WORK/>
+			<FAX/>
+			<NUMBER>联系人-传真</NUMBER>
+		</TEL>
+		<TEL>
+			<WORK/>
+			<MSG/>
+			<NUMBER/>
+		</TEL>
+		<ADR>
+			<WORK/>
+			<EXTADD>办公地址-地址2</EXTADD>
+			<STREET>办公地址-地址1</STREET>
+			<LOCALITY>办公地址-城市</LOCALITY>
+			<REGION>办公地址-州（省）</REGION>
+			<PCODE>办公地址-邮编</PCODE>
+			<COUNTRY>AM</COUNTRY>
+		</ADR>
+		<EMAIL>
+			<INTERNET/>
+			<PREF/>
+			<USERID>电子邮件</USERID>
+		</EMAIL>
+		<EMAIL>
+			<INTERNET/>
+			<USERID>联系人-Email</USERID>
+		</EMAIL>
+		<DESC/>
+		<JABBERID/>
+	</vCard>
+</iq>
