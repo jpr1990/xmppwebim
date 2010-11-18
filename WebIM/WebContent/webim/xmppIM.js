@@ -1178,9 +1178,17 @@
 			//createRosterTree(newRosters);
 			rosterManager.fireRosterListener(newRosters);
 			return true;
-		};		
+		};
 		return rosterManager;
 	};
+	
+	/************************************************************************************************/
+	/**
+	 * 管理vcard-temp
+	 */
+	function VCardManager(param){
+		
+	}
 	
 	/************************************************************************************************/
 	/**
